@@ -1,15 +1,21 @@
 import { Component, OnInit } from '@angular/core';
+import { Game, SourceStack } from 'app/shared/models';
+import { GameFactoryService } from 'app/shared/game-logic';
 
 @Component({
-  selector: 'app-board',
-  templateUrl: './board.component.html',
-  styleUrls: ['./board.component.css']
+    selector: 'app-board',
+    templateUrl: './board.component.html',
+    styleUrls: ['./board.component.css']
 })
 export class BoardComponent implements OnInit {
+    constructor(
+        private readonly _gameFactory: GameFactoryService
+    ) {
+    }
 
-  constructor() { }
+    public game: Game | null = null;
 
-  ngOnInit() {
-  }
-
+    public ngOnInit(): void {
+        this.game = this._gameFactory.create();
+    }
 }

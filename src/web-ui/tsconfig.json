@@ -24,6 +24,9 @@
       "env/*": [
         "environments/*"
       ]
-    }
+    },
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true
   }
 }

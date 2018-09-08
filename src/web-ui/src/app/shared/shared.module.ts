@@ -1,6 +1,7 @@
 import { NgModule, ModuleWithProviders } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { GameFactoryService } from 'app/shared/game-logic';
 
 @NgModule({
   imports: [
@@ -11,7 +12,10 @@ import { RouterModule } from '@angular/router';
     CommonModule,
     RouterModule
   ],
-  declarations: []
+  declarations: [],
+  providers: [
+    GameFactoryService
+  ]
 })
 export class SharedModule {
   public static forRoot(): ModuleWithProviders {

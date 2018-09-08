@@ -1,3 +1,9 @@
-<p>
-  board works!
-</p>
+<div>
+    <app-source-stack *ngFor="let stack of game.sourceStacks" [stack]="stack"></app-source-stack>
+</div>
+<div>
+    <app-column *ngFor="let column of game.columns" [column]="column"></app-column>
+</div>
+<div>
+    <app-goal-stack *ngFor="let stack of game.goalStacks" [stack]="stack"></app-goal-stack>
+</div>
