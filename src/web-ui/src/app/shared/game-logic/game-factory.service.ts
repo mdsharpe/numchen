@@ -1,28 +1,50 @@
 import { Injectable } from '@angular/core';
-import { Game, SourceStack, Card, Column, GoalStack } from 'app/shared/models';
+import { Game, CardStackSet } from 'app/shared/models';
+import { pipe } from 'rxjs';
+import { flow, range } from 'lodash';
+import { List } from 'immutable';
 
 @Injectable({
     providedIn: 'root'
 })
 export class GameFactoryService {
-    constructor() { }
-
     public create(): Game {
-        const game = new Game();
+        return flow([
+            this.populateSourceStacks,
+            this.populateColumns,
+            this.populateGoalStacks
+        ])(new Game());
+    }
 
-        for (let i = 0; i < 16; i++) {
-            const sourceStack = new SourceStack();
-            game.sourceStacks.push(sourceStack);
+    private populateSourceStacks(game: Game): Game {
+        range(1, 17)
+            .map(o => {
+                return {
+                    i: o,
+                    stack: List<number>(Array(6).fill(o))
+                };
+            })
+            .forEach(o => game = <Game>game.updateIn(
+                ['sourceStacks'],
+                (stackSet: CardStackSet) => stackSet.set(o.i, o.stack)));
 
-            for (let j = 0; j < 6; j++) {
-                sourceStack.cards.push(new Card(i));
-            }
-        }
+        return game;
+    }
 
-        for (let i = 0; i < 6; i++) {
-            game.columns.push(new Column());
-            game.goalStacks.push(new GoalStack());
-        }
+    private populateColumns(game: Game): Game {
+        range(0, 6)
+            .forEach(o => game = <Game>game.updateIn(
+                ['columns'],
+                (stackSet: CardStackSet) => stackSet.push(List<number>([]))));
+
+        return game;
+    }
+
+    private populateGoalStacks(game: Game): Game {
+        range(0, 6)
+            .forEach(o => game = <Game>game.updateIn(
+                ['goalStacks'],
+                (stackSet: CardStackSet) => stackSet.push(List<number>([]))));
 
         return game;
     }

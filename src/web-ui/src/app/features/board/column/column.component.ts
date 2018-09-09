@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Column } from 'app/shared/models';
+import { CardStack } from 'app/shared/models';
 
 @Component({
     selector: 'app-column',
@@ -10,7 +10,7 @@ export class ColumnComponent implements OnInit {
 
     constructor() { }
 
-    @Input() public column: Column | null = null;
+    @Input() public column: CardStack | null = null;
 
     public ngOnInit() {
     }

@@ -1,7 +1,17 @@
-import { SourceStack, Column, GoalStack } from 'app/shared/models';
+import * as Immutable from 'immutable';
+import { BoardState } from 'app/shared/models';
 
-export class Game {
-    public readonly sourceStacks : SourceStack[] = [];
-    public readonly columns : Column[] = [];
-    public readonly goalStacks : GoalStack[] = [];
+export type CardStack = Immutable.List<number>;
+export type CardStackSet = Immutable.List<CardStack>;
+
+const defaultGame = Immutable.Record({
+    sourceStacks: Immutable.List<CardStack>([]),
+    columns: Immutable.List<CardStack>([]),
+    goalStacks: Immutable.List<CardStack>([])
+});
+
+export class Game extends defaultGame {
+    sourceStacks!: CardStackSet;
+    columns!: CardStackSet;
+    goalStacks!: CardStackSet;
 }

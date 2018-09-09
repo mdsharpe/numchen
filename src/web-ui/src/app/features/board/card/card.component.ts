@@ -1,5 +1,4 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Card } from 'app/shared/models';
 
 @Component({
     selector: 'app-card',
@@ -10,7 +9,7 @@ export class CardComponent implements OnInit {
 
     constructor() { }
 
-    @Input() public card: Card | null = null;
+    @Input() public value: number | null = null;
 
     public ngOnInit() {
     }

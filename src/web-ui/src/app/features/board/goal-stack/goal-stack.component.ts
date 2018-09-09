@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { GoalStack } from 'app/shared/models';
+import { CardStack } from 'app/shared/models';
 
 @Component({
     selector: 'app-goal-stack',
@@ -10,7 +10,7 @@ export class GoalStackComponent implements OnInit {
 
     constructor() { }
 
-    @Input() public stack: GoalStack | null = null;
+    @Input() public stack: CardStack | null = null;
 
     public ngOnInit() {
     }
