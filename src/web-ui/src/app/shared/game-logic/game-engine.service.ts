@@ -7,24 +7,24 @@ import { Game } from 'app/shared/models';
 export class GameEngineService {
     constructor() { }
 
-    public init(game: Game): void {
-        // // if (typeof game.nextSourceNumber !== 'number') {
-        // //     this.pickNextSource(game);
-        // // }
+    public init(game: Game): Game {
+        if (typeof game.nextSourceValue !== 'number') {
+            game = this.pickNextSource(game);
+        }
+
+        return game;
     }
 
-    // // private pickNextSource(game: Game): void {
-    // //     const numbers = game.sourceStacks
-    // //         .filter(o => o.cards.length > 0)
-    // //         .map(o => o.cards[o.cards.length - 1].value);
+    private pickNextSource(game: Game): Game {
+        const numbers = game.sourceStacks
+            .filter(o => o.size > 0)
+            .map(o => o.get(o.size - 1));
 
-    // //     if (numbers.length == 0) {
-    // //         return;
-    // //     }
+        const nextSourceValue =
+            numbers.size > 0
+                ? numbers.get(Math.floor(Math.random() * (numbers.size + 1)))
+                : null;
 
-    // //     const nextIndex = Math.floor(
-    // //         Math.random() * (numbers.length + 1));
-
-    // //     game.nextSourceNumber = numbers[nextIndex];
-    // // }
+        return <Game>game.set('nextSourceValue', nextSourceValue);
+    }
 }

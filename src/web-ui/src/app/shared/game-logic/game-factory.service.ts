@@ -17,11 +17,11 @@ export class GameFactoryService {
     }
 
     private populateSourceStacks(game: Game): Game {
-        range(1, 17)
+        range(0, 16)
             .map(o => {
                 return {
                     i: o,
-                    stack: List<number>(Array(6).fill(o))
+                    stack: List<number>(Array(6).fill(o + 1))
                 };
             })
             .forEach(o => game = <Game>game.updateIn(

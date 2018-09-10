@@ -26,6 +26,7 @@
       ]
     },
     "strict": true,
+    "strictNullChecks": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true
   }
