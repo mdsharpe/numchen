@@ -1,5 +1,4 @@
 import * as Immutable from 'immutable';
-import { BoardState } from 'app/shared/models';
 
 export type CardStack = Immutable.List<number>;
 export type CardStackSet = Immutable.List<CardStack>;

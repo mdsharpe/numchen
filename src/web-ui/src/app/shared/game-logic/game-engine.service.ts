@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Game } from 'app/shared/models';
+import { Observable, BehaviorSubject } from 'rxjs';
 
 @Injectable({
     providedIn: 'root'
@@ -7,12 +8,14 @@ import { Game } from 'app/shared/models';
 export class GameEngineService {
     constructor() { }
 
-    public init(game: Game): Game {
+    public readonly game$ = new BehaviorSubject<Game>(null);
+
+    public init(game: Game): void {
         if (typeof game.nextSourceValue !== 'number') {
             game = this.pickNextSource(game);
         }
 
-        return game;
+        this.game$.next(game);
     }
 
     private pickNextSource(game: Game): Game {
