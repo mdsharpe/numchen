@@ -1,10 +1,10 @@
-import { Component, OnInit, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectionStrategy, Output, EventEmitter } from '@angular/core';
 import { CardStack } from 'app/shared/models';
 
 @Component({
     selector: 'app-column',
     templateUrl: './column.component.html',
-    styleUrls: ['./column.component.css'],
+    styleUrls: ['./column.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ColumnComponent implements OnInit {
@@ -13,7 +13,12 @@ export class ColumnComponent implements OnInit {
 
     @Input() public column: CardStack | null = null;
 
-    public ngOnInit() {
+    @Output() public readonly addClick = new EventEmitter<void>();
+
+    public ngOnInit(): void {
     }
 
+    public addClicked():void {
+        this.addClick.emit();
+    }
 }

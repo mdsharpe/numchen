@@ -1,19 +1,39 @@
 import { Injectable } from '@angular/core';
 import { Game } from 'app/shared/models';
 import { Observable, BehaviorSubject } from 'rxjs';
+import { GameFactoryService } from './game-factory.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class GameEngineService {
-    constructor() { }
+    constructor(
+        private readonly _gameFactory: GameFactoryService
+    ) { }
 
     public readonly game$ = new BehaviorSubject<Game>(null);
 
-    public init(game: Game): void {
-        if (typeof game.nextSourceValue !== 'number') {
-            game = this.pickNextSource(game);
-        }
+    public init(): void {
+        this.game$.next(
+            this.pickNextSource(
+                this._gameFactory.create()
+            )
+        );
+    }
+
+    public moveCardToColumn(value: number, colIndex: number): void {
+        let game = this.game$.value;
+
+        let card: number;
+
+        game.sourceStacks.update(
+            game.sourceStacks.findIndex(o => o.filter(p => p === value).size > 0),
+            sourceStack => {
+                card = sourceStack.last();
+                return sourceStack.pop();
+            });
+
+        game.columns.update(colIndex, column => column.push(card));
 
         this.game$.next(game);
     }

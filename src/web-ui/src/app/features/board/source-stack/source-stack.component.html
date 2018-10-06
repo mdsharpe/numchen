@@ -1,1 +1,6 @@
-<app-card *ngFor="let card of stack.cards" [card]="card"></app-card>
+<app-card
+    *ngFor="let card of stack.cards"
+    [card]="card"></app-card>
+<div *ngIf="stack.isNext">
+    NEXT
+</div>
