@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, ChangeDetectionStrategy } from '@angular/core';
-import { CardStack } from 'app/shared/models';
+import { GoalStackViewModel } from '../view-models/goal-stack.view-model';
 
 @Component({
     selector: 'app-goal-stack',
@@ -11,7 +11,7 @@ export class GoalStackComponent implements OnInit {
 
     constructor() { }
 
-    @Input() public stack: CardStack | null = null;
+    @Input() public stack: GoalStackViewModel | null = null;
 
     public ngOnInit() {
     }

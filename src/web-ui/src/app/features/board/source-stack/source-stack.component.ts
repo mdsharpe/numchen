@@ -1,5 +1,4 @@
 import { Component, OnInit, Input, ChangeDetectionStrategy } from '@angular/core';
-import { CardStack } from 'app/shared/models';
 import { SourceStackViewModel } from 'app/features/board/view-models';
 
 @Component({
@@ -12,7 +11,7 @@ export class SourceStackComponent implements OnInit {
 
     constructor() { }
 
-    @Input() public stack: SourceStackViewModel;
+    @Input() public stack: SourceStackViewModel | null = null;
 
     public ngOnInit() {
     }

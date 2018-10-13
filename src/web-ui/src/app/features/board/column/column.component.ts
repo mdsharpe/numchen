@@ -1,6 +1,5 @@
 import { Component, OnInit, Input, ChangeDetectionStrategy, Output, EventEmitter } from '@angular/core';
-import { CardStack } from 'app/shared/models';
-import { CardViewModel } from '../view-models';
+import { ColumnViewModel } from '../view-models/column.view-model';
 
 @Component({
     selector: 'app-column',
@@ -12,7 +11,7 @@ export class ColumnComponent implements OnInit {
 
     constructor() { }
 
-    @Input() public column: CardStack | null = null;
+    @Input() public column: ColumnViewModel | null = null;
 
     @Output() public readonly addClick = new EventEmitter<void>();
     @Output() public readonly removeClick = new EventEmitter<void>();
