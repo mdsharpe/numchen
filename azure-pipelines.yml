@@ -22,7 +22,7 @@ steps:
 - task: CopyFiles@2
   inputs:
     SourceFolder: 'src/web-ui/dist/web-ui'
-    Contents: *.*
+    Contents: '*.*'
     TargetFolder: '$(Build.ArtifactStagingDirectory)/web-ui'
 
 - task: PublishBuildArtifacts@1
