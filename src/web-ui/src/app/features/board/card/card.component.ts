@@ -11,6 +11,7 @@ export class CardComponent implements OnInit {
     constructor() { }
 
     @Input() public card: CardViewModel;
+    @Input() public moveable: boolean;
 
     public ngOnInit(): void {
     }

@@ -1,9 +1,11 @@
-<span class="card-number card-number--top-left card-number--small">
-    {{card.value}}
-</span>
-<span class="card-number card-number--center">
-    {{card.value}}
-</span>
-<span class="card-number card-number--bottom-right card-number--small">
-    {{card.value}}
-</span>
+<div class="card__inner" [class.card__inner--moveable]="moveable">
+    <span class="card-number card-number--top-left card-number--small">
+        {{card.value}}
+    </span>
+    <span class="card-number card-number--center">
+        {{card.value}}
+    </span>
+    <span class="card-number card-number--bottom-right card-number--small">
+        {{card.value}}
+    </span>
+</div>

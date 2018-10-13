@@ -1,4 +1,4 @@
-:host() {
+.card__inner {
     border: solid 1px #ccc;
     border-radius: 3px;
     background-color: #444;
@@ -8,6 +8,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
+    &.card__inner--moveable {
+        background-color: #ddd;
+        color: #000;
+    }
 }
 
 .card-number {
