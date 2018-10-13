@@ -4,12 +4,9 @@
     flex-direction: column;
 }
 
-.source-stack-container {
-    display: flex;
-    height: 64px;
-}
-
-.column-container {
+.source-stack-container,
+.column-container,
+.goal-stack-container {
     display: flex;
     height: 64px;
 }

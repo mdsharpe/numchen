@@ -8,11 +8,10 @@ import { CardViewModel } from 'app/features/board/view-models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CardComponent implements OnInit {
-
     constructor() { }
 
     @Input() public card: CardViewModel;
 
-    public ngOnInit() {
+    public ngOnInit(): void {
     }
 }

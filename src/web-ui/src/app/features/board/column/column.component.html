@@ -1,2 +1,3 @@
-Column
 <input type="button" value="ADD" (click)="addClicked()" />
+<app-card *ngFor="let card of column.cards" [card]="card"></app-card>
+<input type="button" value="REMOVE" (click)="removeClicked()" />

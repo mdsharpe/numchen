@@ -34,7 +34,11 @@ export class BoardComponent implements OnInit {
             throw new Error();
         }
 
-        this._gameEngine.moveCardToColumn(cardToMove.value, columnIndex);
+        this._gameEngine.moveNextToColumn(columnIndex);
+    }
+
+    public columnRemoveClicked(columnIndex: number) {
+        this._gameEngine.moveLastToGoal(columnIndex);
     }
 
     private updateGame(game: Game): void {

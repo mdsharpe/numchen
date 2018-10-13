@@ -6,9 +6,10 @@
     <div class="column-container">
         <app-column *ngFor="let column of game.columns; let columnIndex = index"
                     [column]="column"
-                    (addClick)="columnAddClicked(columnIndex)"></app-column>
+                    (addClick)="columnAddClicked(columnIndex)"
+                    (removeClick)="columnRemoveClicked(columnIndex)"></app-column>
     </div>
-    <div>
+    <div class="goal-stack-container">
         <app-goal-stack *ngFor="let stack of game.goalStacks" [stack]="stack"></app-goal-stack>
     </div>
 </div>
