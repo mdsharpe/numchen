@@ -1,5 +1,33 @@
 :host {
-    border: solid 1px #fff;
-    position: relative;
-    flex: 1 0 16px;
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    margin: 0.5vh 0.5vw;
+    background-color: #000;
+    border-radius: 5px;
+}
+
+.colbutton {
+    flex: 0 0 3vh;
+    height: 3vh;
+    border: none;
+    background: #444;
+    color: #fff;
+
+    &.colbutton--add {
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+    }
+
+    &.colbutton--remove {
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+    }
+}
+
+.card-column {
+    display: flex;
+    flex-direction:  column;
+    flex-wrap: wrap;
+    flex: 1 0 auto;
 }

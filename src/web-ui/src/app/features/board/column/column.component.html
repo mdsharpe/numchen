@@ -1,3 +1,13 @@
-<input type="button" value="ADD" (click)="addClicked()" />
-<app-card *ngFor="let card of column.cards" [card]="card"></app-card>
-<input type="button" value="REMOVE" (click)="removeClicked()" />
+<input type="button"
+       value="&#x25BC;"
+       (click)="addClicked()"
+       class="colbutton colbutton--add" />
+<div class="card-column">
+    <app-card *ngFor="let card of column.cards"
+              [card]="card"
+              class="card"></app-card>
+</div>
+<input type="button"
+       value="&#x25BC;"
+       (click)="removeClicked()"
+       class="colbutton colbutton--remove"/>
