@@ -1,3 +1,30 @@
-:host {
-    border: solid 1px #fff;
+:host() {
+    border: solid 1px #ccc;
+    border-radius: 3px;
+    background-color: #444;
+    width: 3vw;
+    height: 6vh;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-number {
+    &.card-number--small{
+        font-size: 0.5vw;
+    }
+
+    &.card-number--top-left {
+        position: absolute;
+        top: 0.1vh;
+        left: 0.1vh;
+    }
+
+    &.card-number--bottom-right {
+        position: absolute;
+        bottom: 0.1vh;
+        right: 0.1vh;
+        transform: rotate(180deg);
+    }
 }

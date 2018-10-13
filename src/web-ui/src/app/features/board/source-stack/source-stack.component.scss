@@ -1,5 +1,4 @@
-:host {
-    border: solid 1px #fff;
-    position: relative;
-    flex: 1 0 16px;
+:host() {
+    flex: 1 1 (100%/16);
+    height: 9vh;
 }
