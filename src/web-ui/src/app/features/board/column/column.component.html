@@ -1,7 +1,8 @@
 <input type="button"
        value="&#x25BC;"
        (click)="addClicked()"
-       class="colbutton colbutton--add" />
+       class="colbutton colbutton--add"
+       [disabled]="!column.canPush" />
 <div class="card-column">
     <app-card *ngFor="let card of column.cards"
               [card]="card"
@@ -10,4 +11,5 @@
 <input type="button"
        value="&#x25BC;"
        (click)="removeClicked()"
-       class="colbutton colbutton--remove"/>
+       class="colbutton colbutton--remove"
+       [disabled]="!column.canPop" />

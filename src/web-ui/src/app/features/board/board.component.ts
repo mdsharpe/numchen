@@ -58,19 +58,31 @@ export class BoardComponent implements OnInit {
                                 .set('value', n)
                             )
                         )
-                        .set('isNext', o.filter(p => p === game.nextSourceValue).size > 0)
+                        .set(
+                            'isNext',
+                            o.filter(p => p === game.nextSourceValue).size > 0)
                 )
             )
             .set(
                 'columns',
                 game.columns.map(
-                    o => new ColumnViewModel()
+                    column => new ColumnViewModel()
                         .set(
                             'cards',
-                            o.map(n => new CardViewModel()
-                                .set('value', n)
+                            column.map(o => new CardViewModel()
+                                .set('value', o)
                             )
                         )
+                        .set(
+                            'canPush',
+                            game.sourceStacks.filter(o => o.size > 0).size > 0)
+                        .set(
+                            'canPop',
+                            column.size > 0
+                            && game.goalStacks.filter(o =>
+                                o.last() === column.last() - 1
+                                || (o.size === 0 && column.last() === 1)
+                            ).size > 0)
                 )
             )
             .set(
