@@ -7,6 +7,15 @@
     border-radius: 5px;
 }
 
+.card-column {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    flex: 1 1 auto;
+    height: calc(100% - 6vh);
+    align-content: flex-start;
+}
+
 .colbutton {
     flex: 0 0 3vh;
     height: 3vh;
@@ -27,11 +36,4 @@
         border-bottom-left-radius: 5px;
         border-bottom-right-radius: 5px;
     }
-}
-
-.card-column {
-    display: flex;
-    flex-direction:  column;
-    flex-wrap: wrap;
-    flex: 1 0 auto;
 }

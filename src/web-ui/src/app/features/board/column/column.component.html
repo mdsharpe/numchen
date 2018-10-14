@@ -4,9 +4,10 @@
        class="colbutton colbutton--add"
        [disabled]="!column.canPush" />
 <div class="card-column">
-    <app-card *ngFor="let card of column.cards"
+    <app-card *ngFor="let card of column.cards; let cardIndex = index"
               [card]="card"
-              class="card"></app-card>
+              class="card"
+              [moveable]="column.canPop && cardIndex === column.cards.size - 1"></app-card>
 </div>
 <input type="button"
        value="&#x25BC;"

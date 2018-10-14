@@ -1,4 +1,11 @@
 :host() {
     flex: 1 1 (100%/16);
-    height: 9vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-stack {
+    height: 6vh;
+    width: 4.5vw;
 }
