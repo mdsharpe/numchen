@@ -15,4 +15,13 @@ export class CardComponent implements OnInit {
 
     public ngOnInit(): void {
     }
+
+    public cardColor(): string {
+        if (this.moveable) {
+            return "";
+        }
+
+        const hue = ((this.card.value-1)/17) * 360;
+        return "hsl(" + hue + ", 66%, 33%)";
+    }
 }

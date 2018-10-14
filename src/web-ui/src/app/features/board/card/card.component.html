@@ -1,4 +1,6 @@
-<div class="card__inner" [class.card__inner--moveable]="moveable">
+<div class="card__inner"
+     [class.card__inner--moveable]="moveable"
+     [style.background-color]="cardColor()">
     <span class="card-number card-number--top-left card-number--small">
         {{card.value}}
     </span>
