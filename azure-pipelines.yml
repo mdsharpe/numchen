@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 pool:
-  vmImage: 'Ubuntu 16.04'
+  vmImage: 'vs2017-win2016'
 
 steps:
 - task: NodeTool@0
@@ -15,9 +15,9 @@ steps:
 - script: |
     cd src/web-ui
     npm install -g @angular/cli
-    npm install
+    npm ci
     ng build --prod
-  displayName: 'npm install and build'
+  displayName: 'npm ci and build'
 
 - task: CopyFiles@2
   inputs:
