@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Game, CardStackSet } from 'app/shared/models';
-import { pipe } from 'rxjs';
+import { Game } from 'app/shared/models';
 import { flow, range } from 'lodash';
-import { List } from 'immutable';
+import { produce } from 'immer';
 
 @Injectable({
     providedIn: 'root'
@@ -13,39 +12,37 @@ export class GameFactoryService {
             this.populateSourceStacks,
             this.populateColumns,
             this.populateGoalStacks
-        ])(new Game());
+        ])({});
     }
 
-    private populateSourceStacks(game: Game): Game {
-        range(0, 16)
-            .map(o => {
-                return {
-                    i: o,
-                    stack: List<number>(Array(6).fill(o + 1))
-                };
-            })
-            .forEach(o => game = <Game>game.updateIn(
-                ['sourceStacks'],
-                (stackSet: CardStackSet) => stackSet.set(o.i, o.stack)));
+    private populateSourceStacks(game: Game) {
+        return produce(
+            game,
+            draft => {
+                draft.sourceStacks = [];
 
-        return game;
+                range(0, 16)
+                    .forEach(i => draft.sourceStacks.push(Array(6).fill(i + 1)));
+            });
     }
 
     private populateColumns(game: Game): Game {
-        range(0, 6)
-            .forEach(o => game = <Game>game.updateIn(
-                ['columns'],
-                (stackSet: CardStackSet) => stackSet.push(List<number>([]))));
+        return produce(game, draft => 
+            { 
+                draft.columns = [];
 
-        return game;
+                range(0, 6)
+                    .forEach(i => draft.columns.push([]));
+            });
     }
 
     private populateGoalStacks(game: Game): Game {
-        range(0, 6)
-            .forEach(o => game = <Game>game.updateIn(
-                ['goalStacks'],
-                (stackSet: CardStackSet) => stackSet.push(List<number>([]))));
-
-        return game;
+        return produce(game, draft => 
+            { 
+                draft.goalStacks = [];
+                
+                range(0, 6)
+                    .forEach(i => draft.goalStacks.push([]));
+            });
     }
 }

@@ -21,7 +21,7 @@
     "@angular/platform-browser-dynamic": "^6.1.9",
     "@angular/router": "^6.1.9",
     "core-js": "^2.5.7",
-    "immutable": "^3.8.2",
+    "immer": "^1.7.2",
     "lodash": "^4.17.11",
     "rxjs": "~6.3.3",
     "zone.js": "~0.8.26"

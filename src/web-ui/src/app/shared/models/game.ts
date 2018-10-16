@@ -1,18 +1,6 @@
-import * as Immutable from 'immutable';
-
-export type CardStack = Immutable.List<number>;
-export type CardStackSet = Immutable.List<CardStack>;
-
-const defaultGame = Immutable.Record({
-    sourceStacks: Immutable.List<CardStack>([]),
-    columns: Immutable.List<CardStack>([]),
-    goalStacks: Immutable.List<CardStack>([]),
-    nextSourceValue: null
-});
-
-export class Game extends defaultGame {
-    sourceStacks: CardStackSet;
-    columns: CardStackSet;
-    goalStacks: CardStackSet;
+export interface Game {
+    sourceStacks: number[][];
+    columns: number[][];
+    goalStacks: number[][];
     nextSourceValue: number;
 }

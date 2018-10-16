@@ -1,9 +1,14 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import * as _ from 'lodash';
+
 import { GameEngineService } from 'app/shared/game-logic';
-import { GameViewModel, SourceStackViewModel, CardViewModel } from 'app/features/board/view-models';
 import { Game } from 'app/shared/models';
-import { ColumnViewModel } from 'app/features/board/view-models/column.view-model';
-import { GoalStackViewModel } from 'app/features/board/view-models/goal-stack.view-model';
+import {
+    GameViewModel,
+    SourceStackViewModel,
+    ColumnViewModel,
+    GoalStackViewModel
+} from 'app/features/board/view-models';
 
 @Component({
     selector: 'app-board',
@@ -17,7 +22,7 @@ export class BoardComponent implements OnInit {
     ) {
     }
 
-    public game : GameViewModel;
+    public game: GameViewModel = null;
 
     public ngOnInit(): void {
         this._gameEngine.game$.subscribe(o => this.updateGame(o));
@@ -25,10 +30,10 @@ export class BoardComponent implements OnInit {
     }
 
     public columnAddClicked(columnIndex: number): void {
-        const sourceStack = this.game.sourceStacks
-            .filter(o => o.isNext)
-            .first();
-        const cardToMove = sourceStack.cards.first();
+        const sourceStack = _.find(
+            this.game.sourceStacks,
+            o => o.isNext);
+        const cardToMove = _.take(sourceStack.cards);
 
         if (!cardToMove) {
             throw new Error();
@@ -47,55 +52,31 @@ export class BoardComponent implements OnInit {
             return;
         }
 
-        this.game = <GameViewModel>new GameViewModel()
-            .set(
-                'sourceStacks',
-                game.sourceStacks.map(
-                    o => new SourceStackViewModel()
-                        .set(
-                            'cards',
-                            o.map(n => new CardViewModel()
-                                .set('value', n)
-                            )
-                        )
-                        .set(
-                            'isNext',
-                            o.filter(p => p === game.nextSourceValue).size > 0)
-                )
-            )
-            .set(
-                'columns',
-                game.columns.map(
-                    column => new ColumnViewModel()
-                        .set(
-                            'cards',
-                            column.map(o => new CardViewModel()
-                                .set('value', o)
-                            )
-                        )
-                        .set(
-                            'canPush',
-                            game.sourceStacks.filter(o => o.size > 0).size > 0)
-                        .set(
-                            'canPop',
-                            column.size > 0
-                            && game.goalStacks.filter(o =>
-                                o.last() === column.last() - 1
-                                || (o.size === 0 && column.last() === 1)
-                            ).size > 0)
-                )
-            )
-            .set(
-                'goalStacks',
-                game.goalStacks.map(
-                    o => new GoalStackViewModel()
-                        .set(
-                            'cards',
-                            o.map(n => new CardViewModel()
-                                .set('value', n))
-                        )
-                )
-            )
-        ;
+        this.game = {
+            sourceStacks: game.sourceStacks.map<SourceStackViewModel>(
+                sourceStack => {
+                    return {
+                        cards: sourceStack.map(n => { return { value: n }; }),
+                        isNext: _.some(sourceStack, n => n === game.nextSourceValue)
+                    };
+                }),
+            columns: game.columns.map<ColumnViewModel>(
+                column => {
+                    return {
+                        cards: column.map(o => { return { value: o }; }),
+                        canPush: _.some(game.sourceStacks, o => o.length > 0),
+                        canPop: column.length > 0
+                            && _.some(game.goalStacks, o =>
+                                _.last(o) === _.last(column) - 1
+                                || (o.length === 0 && _.last(column) === 1))
+                    };
+                }),
+            goalStacks: game.goalStacks.map<GoalStackViewModel>(
+                goalStack => {
+                    return {
+                        cards: goalStack.map(o => { return { value: o }; })
+                    };
+                })
+        };
     }
 }

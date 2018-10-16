@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Game, CardStack, CardStackSet } from 'app/shared/models';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+import { produce } from 'immer';
+import * as _ from 'lodash';
+
+import { Game } from 'app/shared/models';
 import { GameFactoryService } from './game-factory.service';
 
 @Injectable({
@@ -24,24 +27,12 @@ export class GameEngineService {
     public moveNextToColumn(colIndex: number): void {
         let game = this.game$.value;
 
-        let card: number;
-
-        game = <Game>game
-            .update(
-                'sourceStacks',
-                (sourceStacks: CardStackSet) => sourceStacks.update(
-                    game.sourceStacks.findIndex(o => o.filter(p => p === game.nextSourceValue).size > 0),
-                    (sourceStack: CardStack) => {
-                        card = sourceStack.last();
-                        return sourceStack.pop();
-                    })
-            )
-            .update(
-                'columns',
-                (columns: CardStackSet) => columns.update(
-                    colIndex,
-                    (column: CardStack) => column.push(card))
-            );
+        game = produce(
+            this.game$.value,
+            draft => {
+                const card = _.find(draft.sourceStacks, o => _.some(o, p => p === game.nextSourceValue)).pop();
+                draft.columns[colIndex].push(card);
+            });
 
         game = this.pickNextSource(game);
 
@@ -51,27 +42,17 @@ export class GameEngineService {
     public moveLastToGoal(colIndex: number): void {
         let game = this.game$.value;
 
-        let card = game.columns.get(colIndex).last();
-
-        let goalIndex = game
-            .goalStacks
-            .findIndex(
-                o => card > 1 ? o.last() === card - 1 : o.isEmpty());
+        const card = _.last(game.columns[colIndex]);
+        
+        const goalIndex = game.goalStacks.findIndex(o => card > 1 ? _.last(o) === card - 1 : _.isEmpty(o));
 
         if (goalIndex >= 0) {
-            game = <Game>game
-                .update(
-                    'columns',
-                    (columns: CardStackSet) => columns.update(
-                        colIndex,
-                        (column: CardStack) => column.pop())
-                )
-                .update(
-                    'goalStacks',
-                    (goalStacks: CardStackSet) => goalStacks.update(
-                        goalIndex,
-                        (goalStack: CardStack) => goalStack.push(card))
-                );
+            game = produce(
+                game,
+                draft => {
+                    draft.columns[colIndex].pop();
+                    draft.goalStacks[goalIndex].push(card);
+                });
 
             this.game$.next(game);
         }
@@ -79,14 +60,18 @@ export class GameEngineService {
 
     private pickNextSource(game: Game): Game {
         const numbers = game.sourceStacks
-            .filter(o => o.size > 0)
-            .map(o => o.get(o.size - 1));
+            .filter(o => o.length > 0)
+            .map(o => _.last(o));
 
         const nextSourceValue =
-            numbers.size > 0
-                ? numbers.get(Math.floor(Math.random() * numbers.size))
+            numbers.length > 0
+                ? numbers[Math.floor(Math.random() * numbers.length)]
                 : null;
 
-        return <Game>game.set('nextSourceValue', nextSourceValue);
+        return produce(
+            game,
+            draft => {
+                draft.nextSourceValue = nextSourceValue;
+            });
     }
 }
