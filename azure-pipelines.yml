@@ -15,7 +15,7 @@ steps:
 - script: |
     cd src/web-ui
     npm install -g @angular/cli
-    npm install
+    npm ci
     ng build --prod
   displayName: 'npm install and build'
 
