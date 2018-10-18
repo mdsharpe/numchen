@@ -58,14 +58,14 @@ export class BoardComponent implements OnInit, OnDestroy {
             sourceStacks: board.sourceStacks.map<SourceStackViewModel>(
                 sourceStack => {
                     return {
-                        cards: sourceStack.map(n => { return { value: n }; }),
+                        cards: sourceStack.map(n => ({ value: n })),
                         isNext: _.some(sourceStack, n => n === board.nextSourceValue)
                     };
                 }),
             columns: board.columns.map<ColumnViewModel>(
                 column => {
                     return {
-                        cards: column.map(o => { return { value: o }; }),
+                        cards: column.map(o => ({ value: o })),
                         canPush: _.some(board.sourceStacks, o => o.length > 0),
                         canPop: column.length > 0
                             && _.some(board.goalStacks, o =>
@@ -76,7 +76,7 @@ export class BoardComponent implements OnInit, OnDestroy {
             goalStacks: board.goalStacks.map<GoalStackViewModel>(
                 goalStack => {
                     return {
-                        cards: goalStack.map(o => { return { value: o }; })
+                        cards: goalStack.map(o => ({ value: o }))
                     };
                 })
         };
