@@ -9,6 +9,7 @@ import { ColumnComponent } from './column/column.component';
 import { SourceStackComponent } from './source-stack/source-stack.component';
 import { GoalStackComponent } from './goal-stack/goal-stack.component';
 import { CardComponent } from './card/card.component';
+import { ScoreComponent } from './score/score.component';
 
 @NgModule({
   imports: [
@@ -21,7 +22,8 @@ import { CardComponent } from './card/card.component';
     ColumnComponent,
     SourceStackComponent,
     GoalStackComponent,
-    CardComponent
+    CardComponent,
+    ScoreComponent
   ],
   exports: [BoardComponent]
 })
