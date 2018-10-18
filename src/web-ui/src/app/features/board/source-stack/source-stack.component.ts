@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Input } from '@angular/core';
 import { SourceStackViewModel } from 'app/features/board/view-models';
 
 @Component({
@@ -7,12 +7,6 @@ import { SourceStackViewModel } from 'app/features/board/view-models';
     styleUrls: ['./source-stack.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SourceStackComponent implements OnInit {
-
-    constructor() { }
-
+export class SourceStackComponent {
     @Input() public stack: SourceStackViewModel | null = null;
-
-    public ngOnInit() {
-    }
 }

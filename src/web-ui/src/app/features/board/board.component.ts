@@ -26,7 +26,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     }
 
     private readonly unsubscribe$ = new Subject<void>();
-    public board$: Observable<GameViewModel>;
+    public board$: Observable<GameViewModel | null> | null = null;
 
     public ngOnInit(): void {
         this.board$ = this._store.select<BoardStateModel>(state => state.board)
@@ -49,36 +49,29 @@ export class BoardComponent implements OnInit, OnDestroy {
         this._store.dispatch(new MoveLastToGoal(columnIndex));
     }
 
-    private mapStateToViewModel(board: BoardStateModel): GameViewModel {
+    private mapStateToViewModel(board: BoardStateModel): GameViewModel | null {
         if (!board) {
             return null;
         }
 
         return {
             sourceStacks: board.sourceStacks.map<SourceStackViewModel>(
-                sourceStack => {
-                    return {
-                        cards: sourceStack.map(n => ({ value: n })),
-                        isNext: _.some(sourceStack, n => n === board.nextSourceValue)
-                    };
-                }),
+                sourceStack => ({
+                    cards: sourceStack.map(n => ({ value: n })),
+                    isNext: _.some(sourceStack, n => n === board.nextSourceValue)
+                })),
             columns: board.columns.map<ColumnViewModel>(
-                column => {
-                    return {
-                        cards: column.map(o => ({ value: o })),
-                        canPush: _.some(board.sourceStacks, o => o.length > 0),
-                        canPop: column.length > 0
-                            && _.some(board.goalStacks, o =>
-                                _.last(o) === _.last(column) - 1
-                                || (o.length === 0 && _.last(column) === 1))
-                    };
-                }),
+                column => ({
+                    cards: column.map(o => ({ value: o })),
+                    canPush: _.some(board.sourceStacks, o => o.length > 0),
+                    canPop: column.length > 0 && _.some(
+                        board.goalStacks,
+                        o => (_.last(o) || 0) === <number>_.last(column) - 1)
+                })),
             goalStacks: board.goalStacks.map<GoalStackViewModel>(
-                goalStack => {
-                    return {
-                        cards: goalStack.map(o => ({ value: o }))
-                    };
-                })
+                goalStack => ({
+                    cards: goalStack.map(o => ({ value: o }))
+                }))
         };
     }
 }

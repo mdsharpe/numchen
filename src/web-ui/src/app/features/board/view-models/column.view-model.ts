@@ -1,4 +1,4 @@
-import { CardViewModel } from ".";
+import { CardViewModel } from '.';
 
 export interface ColumnViewModel {
     cards: CardViewModel[];

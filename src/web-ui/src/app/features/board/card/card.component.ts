@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CardViewModel } from 'app/features/board/view-models';
 
 @Component({
@@ -7,21 +7,16 @@ import { CardViewModel } from 'app/features/board/view-models';
     styleUrls: ['./card.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CardComponent implements OnInit {
-    constructor() { }
-
-    @Input() public card: CardViewModel;
-    @Input() public moveable: boolean;
-
-    public ngOnInit(): void {
-    }
+export class CardComponent {
+    @Input() public card: CardViewModel | null = null;
+    @Input() public moveable: boolean | null = null;
 
     public cardColor(): string {
-        if (this.moveable) {
-            return "";
+        if (this.moveable || !this.card) {
+            return '';
         }
 
-        const hue = ((this.card.value-1)/17) * 360;
-        return "hsl(" + hue + ", 66%, 33%)";
+        const hue = ((this.card.value - 1) / 17) * 360;
+        return 'hsl(' + hue + ', 66%, 33%)';
     }
 }

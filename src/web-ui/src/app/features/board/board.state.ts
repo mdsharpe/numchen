@@ -1,15 +1,16 @@
-import { State, Action, StateContext, NgxsOnInit } from "@ngxs/store";
-import produce from "immer";
-import { flow, range } from 'lodash';
-import * as _ from "lodash";
+import { State, Action, StateContext, NgxsOnInit } from '@ngxs/store';
+import { flow, range, } from 'lodash';
+import { map, filter, isNil } from 'lodash/fp';
+import produce from 'immer';
+import * as _ from 'lodash';
 
-import { MoveNextToColumn, MoveLastToGoal, ResetBoard } from "./board.actions";
+import { MoveNextToColumn, MoveLastToGoal, ResetBoard } from './board.actions';
 
 export interface BoardStateModel {
     sourceStacks: number[][];
     columns: number[][];
     goalStacks: number[][];
-    nextSourceValue: number;
+    nextSourceValue: number | null;
 }
 
 @State<BoardStateModel>({
@@ -45,7 +46,7 @@ export class BoardState implements NgxsOnInit {
 
     @Action(MoveNextToColumn)
     public moveNextToColumn(ctx: StateContext<BoardStateModel>, action: MoveNextToColumn): void {
-        let board = ctx.getState();
+        const board = ctx.getState();
 
         ctx.setState(flow(
             produce(draft => {
@@ -58,26 +59,30 @@ export class BoardState implements NgxsOnInit {
 
     @Action(MoveLastToGoal)
     public moveLastToGoal(ctx: StateContext<BoardStateModel>, action: MoveLastToGoal): void {
-        let board = ctx.getState();
+        const board = ctx.getState();
 
         const card = _.last(board.columns[action.colIndex]);
 
-        const goalIndex = board.goalStacks.findIndex(o => card > 1 ? _.last(o) === card - 1 : _.isEmpty(o));
+        if (card) {
+            const goalIndex = board.goalStacks.findIndex(
+                o => card > 1 ? _.last(o) === card - 1 : _.isEmpty(o));
 
-        if (goalIndex >= 0) {
-            ctx.setState(produce(
-                board,
-                draft => {
-                    draft.columns[action.colIndex].pop();
-                    draft.goalStacks[goalIndex].push(card);
-                }));
+            if (goalIndex >= 0) {
+                ctx.setState(produce(
+                    board,
+                    draft => {
+                        draft.columns[action.colIndex].pop();
+                        draft.goalStacks[goalIndex].push(card);
+                    }));
+            }
         }
     }
 
     private pickNextSource(board: BoardStateModel): BoardStateModel {
-        const numbers = board.sourceStacks
-            .filter(o => o.length > 0)
-            .map(o => _.last(o));
+        const numbers = flow(
+            map((o: number[]) => _.last(o)),
+            filter<number>(o => !isNil(o))
+        )(board.sourceStacks);
 
         const nextSourceValue =
             numbers.length > 0
