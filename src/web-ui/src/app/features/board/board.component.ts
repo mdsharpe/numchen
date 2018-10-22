@@ -71,7 +71,8 @@ export class BoardComponent implements OnInit, OnDestroy {
             goalStacks: board.goalStacks.map<GoalStackViewModel>(
                 goalStack => ({
                     cards: goalStack.map(o => ({ value: o }))
-                }))
+                })),
+            score: _.sumBy(board.goalStacks, o => o.length)
         };
     }
 }

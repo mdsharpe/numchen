@@ -12,17 +12,29 @@
     flex-direction: column;
     flex-wrap: wrap;
     flex: 1 1 auto;
-    height: calc(100% - 6vh);
+    height: calc(100% - 12vh);
     align-content: flex-start;
 }
 
 .colbutton {
-    flex: 0 0 3vh;
-    height: 3vh;
+    flex: 0 0 6vh;
+    height: 6vh;
     border: none;
     background: #444;
     color: #fff;
     cursor: pointer;
+
+    &:focus {
+        padding: 0;
+    }
+
+    &:hover:not([disabled]) {
+        background: #666;
+    }
+
+    &:active:not([disabled]) {
+        background: #555;
+    }
 
     &[disabled] {
         opacity: (1/3);

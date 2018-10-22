@@ -4,4 +4,5 @@ export interface GameViewModel {
     sourceStacks: SourceStackViewModel[];
     columns: ColumnViewModel[];
     goalStacks: GoalStackViewModel[];
+    score: number;
 }

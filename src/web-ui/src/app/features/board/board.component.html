@@ -1,17 +1,18 @@
-<ng-container *ngIf="board$ | async; else noboard">
+<ng-container *ngIf="board$ | async as board; else noboard">
     <div class="source-stack-container">
-        <app-source-stack *ngFor="let stack of (board$ | async).sourceStacks"
+        <app-source-stack *ngFor="let stack of board.sourceStacks"
                           [stack]="stack"></app-source-stack>
     </div>
     <div class="column-container">
-        <app-column *ngFor="let column of (board$ | async).columns; let columnIndex = index"
+        <app-column *ngFor="let column of board.columns; let columnIndex = index"
                     [column]="column"
                     (addClick)="columnAddClicked(columnIndex)"
                     (removeClick)="columnRemoveClicked(columnIndex)"></app-column>
     </div>
-    <div class="goal-stack-container">
-        <app-goal-stack *ngFor="let stack of (board$ | async).goalStacks"
+    <div class="board-footer">
+        <app-goal-stack *ngFor="let stack of board.goalStacks"
                         [stack]="stack"></app-goal-stack>
+        <app-score [score]="board.score"></app-score>
     </div>
 </ng-container>
 <ng-template #noboard>

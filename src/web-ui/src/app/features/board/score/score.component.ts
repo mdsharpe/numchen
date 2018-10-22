@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Input } from '@angular/core';
 
 @Component({
     selector: 'app-score',
@@ -7,4 +7,5 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ScoreComponent {
+    @Input() public score = 0;
 }
