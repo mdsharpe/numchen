@@ -1,8 +1,7 @@
 import { State, Action, StateContext, NgxsOnInit } from '@ngxs/store';
-import { flow, range, } from 'lodash';
-import { map, filter, isNil } from 'lodash/fp';
 import produce from 'immer';
-import * as _ from 'lodash';
+import { flow, range, last, isEmpty, find, some, } from 'lodash';
+import { map, filter, isNil } from 'lodash/fp';
 
 import { MoveNextToColumn, MoveLastToGoal, ResetBoard } from './board.actions';
 
@@ -50,7 +49,7 @@ export class BoardState implements NgxsOnInit {
 
         ctx.setState(flow(
             produce(draft => {
-                const card = _.find(draft.sourceStacks, o => _.some(o, p => p === board.nextSourceValue)).pop();
+                const card = find(draft.sourceStacks, o => some(o, p => p === board.nextSourceValue)).pop();
                 draft.columns[action.colIndex].push(card);
             }),
             this.pickNextSource
@@ -61,11 +60,11 @@ export class BoardState implements NgxsOnInit {
     public moveLastToGoal(ctx: StateContext<BoardStateModel>, action: MoveLastToGoal): void {
         const board = ctx.getState();
 
-        const card = _.last(board.columns[action.colIndex]);
+        const card = last(board.columns[action.colIndex]);
 
         if (card) {
             const goalIndex = board.goalStacks.findIndex(
-                o => card > 1 ? _.last(o) === card - 1 : _.isEmpty(o));
+                o => card > 1 ? last(o) === card - 1 : isEmpty(o));
 
             if (goalIndex >= 0) {
                 ctx.setState(produce(
@@ -80,7 +79,7 @@ export class BoardState implements NgxsOnInit {
 
     private pickNextSource(board: BoardStateModel): BoardStateModel {
         const numbers = flow(
-            map((o: number[]) => _.last(o)),
+            map((o: number[]) => last(o)),
             filter<number>(o => !isNil(o))
         )(board.sourceStacks);
 

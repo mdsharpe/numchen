@@ -1,27 +1,20 @@
-import { Component, OnInit, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, OnDestroy } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { map, takeUntil } from 'rxjs/operators';
-import { Store } from '@ngxs/store';
-import * as _ from 'lodash';
+import { takeUntil } from 'rxjs/operators';
 
-import {
-    GameViewModel,
-    SourceStackViewModel,
-    ColumnViewModel,
-    GoalStackViewModel
-} from 'app/features/board/view-models';
-import { BoardStateModel } from '../../board.state';
-import { MoveNextToColumn, MoveLastToGoal } from '../../board.actions';
+import { BoardFacadeService } from '../../board-facade.service';
+import { GameViewModel } from '../../view-models';
 
 @Component({
     selector: 'app-board',
     templateUrl: './board-shell.component.html',
     styleUrls: ['./board-shell.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [BoardFacadeService]
 })
 export class BoardShellComponent implements OnInit, OnDestroy {
     constructor(
-        private readonly _store: Store
+        private readonly _service: BoardFacadeService
     ) {
     }
 
@@ -29,9 +22,8 @@ export class BoardShellComponent implements OnInit, OnDestroy {
     public board$: Observable<GameViewModel | null> | null = null;
 
     public ngOnInit(): void {
-        this.board$ = this._store.select<BoardStateModel>(state => state.board)
+        this.board$ = this._service.board$
             .pipe(
-                map(this.mapStateToViewModel),
                 takeUntil(this.unsubscribe$)
             );
     }
@@ -42,37 +34,10 @@ export class BoardShellComponent implements OnInit, OnDestroy {
     }
 
     public columnAddClicked(columnIndex: number): void {
-        this._store.dispatch(new MoveNextToColumn(columnIndex));
+        this._service.moveNextToColumn(columnIndex);
     }
 
     public columnRemoveClicked(columnIndex: number) {
-        this._store.dispatch(new MoveLastToGoal(columnIndex));
-    }
-
-    private mapStateToViewModel(board: BoardStateModel): GameViewModel | null {
-        if (!board) {
-            return null;
-        }
-
-        return {
-            sourceStacks: board.sourceStacks.map<SourceStackViewModel>(
-                sourceStack => ({
-                    cards: sourceStack.map(n => ({ value: n })),
-                    isNext: _.some(sourceStack, n => n === board.nextSourceValue)
-                })),
-            columns: board.columns.map<ColumnViewModel>(
-                column => ({
-                    cards: column.map(o => ({ value: o })),
-                    canPush: _.some(board.sourceStacks, o => o.length > 0),
-                    canPop: column.length > 0 && _.some(
-                        board.goalStacks,
-                        o => (_.last(o) || 0) === <number>_.last(column) - 1)
-                })),
-            goalStacks: board.goalStacks.map<GoalStackViewModel>(
-                goalStack => ({
-                    cards: goalStack.map(o => ({ value: o }))
-                })),
-            score: _.sumBy(board.goalStacks, o => o.length)
-        };
+        this._service.moveLastToGoal(columnIndex);
     }
 }
