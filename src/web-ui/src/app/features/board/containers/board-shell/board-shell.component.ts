@@ -10,16 +10,16 @@ import {
     ColumnViewModel,
     GoalStackViewModel
 } from 'app/features/board/view-models';
-import { BoardStateModel } from './board.state';
-import { MoveNextToColumn, MoveLastToGoal } from './board.actions';
+import { BoardStateModel } from '../../board.state';
+import { MoveNextToColumn, MoveLastToGoal } from '../../board.actions';
 
 @Component({
     selector: 'app-board',
-    templateUrl: './board.component.html',
-    styleUrls: ['./board.component.scss'],
+    templateUrl: './board-shell.component.html',
+    styleUrls: ['./board-shell.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BoardComponent implements OnInit, OnDestroy {
+export class BoardShellComponent implements OnInit, OnDestroy {
     constructor(
         private readonly _store: Store
     ) {

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter } from '@angular/core';
-import { ColumnViewModel } from '../view-models/column.view-model';
+import { ColumnViewModel } from 'app/features/board/view-models';
 
 @Component({
     selector: 'app-column',
@@ -9,7 +9,6 @@ import { ColumnViewModel } from '../view-models/column.view-model';
 })
 export class ColumnComponent {
     @Input() public column: ColumnViewModel | null = null;
-
     @Output() public readonly addClick = new EventEmitter<void>();
     @Output() public readonly removeClick = new EventEmitter<void>();
 

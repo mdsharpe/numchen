@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, Input } from '@angular/core';
-import { GoalStackViewModel } from '../view-models/goal-stack.view-model';
+import { GoalStackViewModel } from 'app/features/board/view-models';
 
 @Component({
     selector: 'app-goal-stack',

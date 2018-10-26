@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { BoardComponent } from './board.component';
+import { BoardShellComponent } from './containers/board-shell/board-shell.component';
 
 const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    component: BoardComponent
+    component: BoardShellComponent
   }
 ];
 
