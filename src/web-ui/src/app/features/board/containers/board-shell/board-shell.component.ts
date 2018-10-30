@@ -3,7 +3,7 @@ import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { BoardFacadeService } from '../../board-facade.service';
-import { GameViewModel } from '../../view-models';
+import { GameViewModel, SourceStackViewModel } from '../../view-models';
 
 @Component({
     selector: 'app-board',
@@ -31,6 +31,10 @@ export class BoardShellComponent implements OnInit, OnDestroy {
     public ngOnDestroy(): void {
         this.unsubscribe$.next();
         this.unsubscribe$.complete();
+    }
+
+    public sourceStackCardClicked(stackIndex: number): void {
+        this._service.moveNextToGoal(stackIndex);
     }
 
     public columnAddClicked(columnIndex: number): void {

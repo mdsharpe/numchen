@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, Input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter } from '@angular/core';
 import { SourceStackViewModel } from 'app/features/board/view-models';
 
 @Component({
@@ -9,4 +9,11 @@ import { SourceStackViewModel } from 'app/features/board/view-models';
 })
 export class SourceStackComponent {
     @Input() public stack: SourceStackViewModel | null = null;
+    @Output() public readonly cardClick = new EventEmitter<void>();
+
+    public cardClicked(cardIndex: number): void {
+        if (this.stack && cardIndex === this.stack.cards.length - 1) {
+            this.cardClick.emit();
+        }
+    }
 }

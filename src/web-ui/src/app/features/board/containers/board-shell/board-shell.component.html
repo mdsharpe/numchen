@@ -1,7 +1,8 @@
 <ng-container *ngIf="board$ | async as board; else noboard">
     <div class="source-stack-container">
-        <app-source-stack *ngFor="let stack of board.sourceStacks"
-                          [stack]="stack"></app-source-stack>
+        <app-source-stack *ngFor="let stack of board.sourceStacks; let stackIndex = index"
+                          [stack]="stack"
+                          (cardClick)="sourceStackCardClicked(stackIndex)"></app-source-stack>
     </div>
     <div class="column-container">
         <app-column *ngFor="let column of board.columns; let columnIndex = index"

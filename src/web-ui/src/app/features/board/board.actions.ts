@@ -10,6 +10,12 @@ export class MoveLastToGoal {
     }
 }
 
+export class MoveNextToGoal {
+    static readonly type = '[Board] Move next to goal';
+    constructor(public stackIndex: number) {
+    }
+}
+
 export class ResetBoard {
     static readonly type = '[Board] Reset';
 }

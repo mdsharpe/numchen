@@ -36,6 +36,10 @@ export class BoardFacadeService {
         this._store.dispatch(new actions.MoveLastToGoal(columnIndex));
     }
 
+    public moveNextToGoal(stackIndex:number):void {
+        this._store.dispatch(new actions.MoveNextToGoal(stackIndex));
+    }
+
     private mapStateToViewModel(board: BoardStateModel): GameViewModel | null {
         if (!board) {
             return null;
