@@ -47,21 +47,24 @@ export class BoardFacadeService {
 
         return {
             sourceStacks: board.sourceStacks.map<SourceStackViewModel>(
-                sourceStack => ({
-                    cards: sourceStack.map(n => ({ value: n })),
-                    isNext: some(sourceStack, n => n === board.nextSourceValue)
+                stack => ({
+                    cards: stack.map(n => ({ value: n })),
+                    isNext: some(stack, n => n === board.nextSourceValue),
+                    canMoveToGoal: stack.length > 0 && some(
+                        board.goalStacks,
+                        o => (last(o) || 0) === last(stack)! - 1)
                 })),
             columns: board.columns.map<ColumnViewModel>(
-                column => ({
-                    cards: column.map(o => ({ value: o })),
+                col => ({
+                    cards: col.map(o => ({ value: o })),
                     canPush: some(board.sourceStacks, o => o.length > 0),
-                    canPop: column.length > 0 && some(
+                    canMoveToGoal: col.length > 0 && some(
                         board.goalStacks,
-                        o => (last(o) || 0) === <number>last(column) - 1)
+                        o => (last(o) || 0) === last(col)! - 1)
                 })),
             goalStacks: board.goalStacks.map<GoalStackViewModel>(
-                goalStack => ({
-                    cards: goalStack.map(o => ({ value: o }))
+                stack => ({
+                    cards: stack.map(o => ({ value: o }))
                 })),
             score: sumBy(board.goalStacks, o => o.length)
         };

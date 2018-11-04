@@ -5,6 +5,7 @@
     margin: 0.5vh 0.5vw;
     background-color: #000;
     border-radius: 5px;
+    border: solid 1px #777;
 }
 
 .card-column {
@@ -44,10 +45,12 @@
     &.colbutton--add {
         border-top-left-radius: 5px;
         border-top-right-radius: 5px;
+        border-bottom: solid 1px #777;
     }
 
     &.colbutton--remove {
         border-bottom-left-radius: 5px;
         border-bottom-right-radius: 5px;
+        border-top: solid 1px #777;
     }
 }

@@ -1,5 +1,7 @@
 <div class="card__inner"
-     [class.card__inner--moveable]="moveable"
+     [class.card__inner--raised]="raised"
+     [class.card__inner--highlighted]="highlighted"
+     [class.card__inner--clickable]="clickable"
      [style.background-color]="cardColor()">
     <span class="card-number card-number--top-left card-number--small">
         {{card?.value}}

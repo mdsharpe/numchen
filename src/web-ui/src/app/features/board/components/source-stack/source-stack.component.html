@@ -2,6 +2,8 @@
     <app-card *ngFor="let card of stack?.cards; let cardIndex = index"
               [card]="card"
               class="card"
-              [moveable]="stack?.isNext && cardIndex === stack?.cards.length - 1"
+              [raised]="stack?.isNext && cardIndex === stack?.cards.length - 1"
+              [highlighted]="stack?.isNext && stack?.canMoveToGoal && cardIndex === stack?.cards.length - 1"
+              [clickable]="stack?.isNext && stack?.canMoveToGoal && cardIndex === stack?.cards.length - 1"
               (click)="cardClicked(cardIndex)"></app-card>
 </div>

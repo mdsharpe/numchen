@@ -8,6 +8,7 @@
         <app-column *ngFor="let column of board.columns; let columnIndex = index"
                     [column]="column"
                     (addClick)="columnAddClicked(columnIndex)"
+                    (cardClick)="columnCardClicked(columnIndex)"
                     (removeClick)="columnRemoveClicked(columnIndex)"></app-column>
     </div>
     <div class="board-footer">

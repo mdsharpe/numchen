@@ -41,6 +41,10 @@ export class BoardShellComponent implements OnInit, OnDestroy {
         this._service.moveNextToColumn(columnIndex);
     }
 
+    public columnCardClicked(columnIndex: number): void {
+        this._service.moveLastToGoal(columnIndex);
+    }
+
     public columnRemoveClicked(columnIndex: number) {
         this._service.moveLastToGoal(columnIndex);
     }

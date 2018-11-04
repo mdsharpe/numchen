@@ -9,10 +9,12 @@ import { CardViewModel } from 'app/features/board/view-models';
 })
 export class CardComponent {
     @Input() public card: CardViewModel | null = null;
-    @Input() public moveable: boolean | null = null;
+    @Input() public raised: boolean | null = null;
+    @Input() public highlighted: boolean | null = null;
+    @Input() public clickable: boolean | null = null;
 
     public cardColor(): string {
-        if (this.moveable || !this.card) {
+        if (this.highlighted || !this.card) {
             return '';
         }
 
