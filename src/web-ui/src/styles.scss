@@ -30,3 +30,19 @@ body {
         flex: 0 0 auto;
     }
 }
+
+@media (max-width: 800px) {
+    .card-stack {
+        .card {
+            @for $i from 0 through 15 {
+                &:nth-child(#{$i + 1}) {
+                    left: 0;
+                }
+            }
+
+            &:last-child {
+                left: 0.6vw;
+            }
+        }
+    }
+}

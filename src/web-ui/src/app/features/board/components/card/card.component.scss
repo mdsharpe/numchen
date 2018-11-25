@@ -49,3 +49,21 @@
         transform: rotate(180deg);
     }
 }
+
+@media (max-width: 1024px) {
+    .card-number {
+        &.card-number--top-left {
+            display: none;
+        }
+    
+        &.card-number--bottom-right {
+            display: none;
+        }
+    }
+}
+
+@media (max-width: 800px) {
+    .card__inner {
+        width: 4vw;
+    }
+}

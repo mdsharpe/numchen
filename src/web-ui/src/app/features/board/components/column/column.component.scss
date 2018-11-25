@@ -54,3 +54,14 @@
         border-top: solid 1px #777;
     }
 }
+
+@media (max-width: 800px) {
+    .card-column {
+        height: calc(100% - 20vh);
+    }
+
+    .colbutton {
+        flex: 0 0 10vh;
+        height: 10vh;
+    }
+}
