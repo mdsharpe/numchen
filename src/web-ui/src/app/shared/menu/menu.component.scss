@@ -1,0 +1,26 @@
+$height: 9vh;
+
+:host() {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
+.burger-button {
+    line-height: $height;
+    padding: 0;
+    width: 3rem;
+    height: $height;
+    font-size: 2rem;
+    border-top-right-radius: 0.5rem;
+    border: 0 none;
+    background: #000;
+    box-shadow: 0 0 .66vw rgba(255,255,255,0.4);
+    z-index: 500;
+    opacity: 1;
+
+    &:hover {
+        background: #00aaff;
+        color: #000;
+    }
+}
