@@ -1,26 +1,38 @@
-$height: 9vh;
+$menu-width: 25vw;
+$button-height: 9vh;
 
 :host() {
     position: absolute;
-    bottom: 0;
-    left: 0;
+    top: 90vh;
+    left: calc(-25vw + 3rem);
+    height: 100vh;
+    width: $menu-width;
+    background: rgba(0, 0, 0, 0.85);
+    border-top-right-radius: 0.5rem;
+    box-shadow: 0 0 .66vw rgba(255,255,255,0.4);
+    z-index: 500;
+    transition: top ease .3s, left ease .3s;
+
+    &:hover {
+        box-shadow: 0 0 1vw #fff;
+    }
+
+    &.menu-open {
+        top: 0;
+        left: 0;
+        border-top-right-radius: 0;
+    }
 }
 
 .burger-button {
-    line-height: $height;
+    position: absolute;
+    top: 0;
+    right: 0;
+    line-height: $button-height;
     padding: 0;
     width: 3rem;
-    height: $height;
+    height: $button-height;
     font-size: 2rem;
-    border-top-right-radius: 0.5rem;
     border: 0 none;
-    background: #000;
-    box-shadow: 0 0 .66vw rgba(255,255,255,0.4);
-    z-index: 500;
-    opacity: 1;
-
-    &:hover {
-        background: #00aaff;
-        color: #000;
-    }
+    background: transparent;
 }
