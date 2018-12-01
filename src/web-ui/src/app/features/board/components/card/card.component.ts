@@ -14,7 +14,7 @@ export class CardComponent {
     @Input() public clickable: boolean | null = null;
 
     public cardColor(): string {
-        if (this.highlighted || !this.card) {
+        if (this.raised || !this.card) {
             return '';
         }
 

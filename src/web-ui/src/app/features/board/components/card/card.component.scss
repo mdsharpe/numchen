@@ -1,3 +1,17 @@
+@keyframes card-pulse {
+    0% {
+        box-shadow: 0 0 1vw #fff;
+    }
+
+    50% {
+        box-shadow: 0 0 0 #fff;
+    }
+
+    100% {
+        box-shadow: 0 0 1vw #fff;
+    }
+}
+
 :host() {
     cursor: default;
     user-select: none;
@@ -5,7 +19,7 @@
 
 .card__inner {
     border: solid 1px #bbb;
-    box-shadow: 0 0 .66vw #000;
+    box-shadow: 0 0 0.66vw #000;
     border-radius: 3px;
     background-color: #444;
     width: 3vw;
@@ -23,16 +37,17 @@
     &.card__inner--raised {
         box-shadow: 0 0 1vw #000;
         transform: scale(1.02) translate(0, 1vh);
+        background-color: #fff;
+        color: #000;
     }
 
     &.card__inner--highlighted {
-        background-color: #fff;
-        color: #000;
+        animation: card-pulse 4s infinite;
     }
 }
 
 .card-number {
-    &.card-number--small{
+    &.card-number--small {
         font-size: 0.5vw;
     }
 
@@ -55,7 +70,7 @@
         &.card-number--top-left {
             display: none;
         }
-    
+
         &.card-number--bottom-right {
             display: none;
         }
