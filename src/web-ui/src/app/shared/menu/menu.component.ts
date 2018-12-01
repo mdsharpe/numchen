@@ -1,4 +1,4 @@
-import { Component, OnInit, HostBinding } from '@angular/core';
+import { Component, OnInit, HostBinding, HostListener, ElementRef } from '@angular/core';
 
 @Component({
     selector: 'app-menu',
@@ -6,9 +6,21 @@ import { Component, OnInit, HostBinding } from '@angular/core';
     styleUrls: ['./menu.component.scss']
 })
 export class MenuComponent implements OnInit {
-    constructor() { }
+    private readonly _element: ElementRef;
 
-    @HostBinding('class.menu-open') private _open = false;
+    constructor(element: ElementRef) {
+        this._element = element;
+    }
+
+    @HostBinding('class.menu-open')
+    private _open = false;
+
+    @HostListener('document:click', ['$event'])
+    private onClick(event: MouseEvent): void {
+        if (!this._element.nativeElement.contains(event.target) && this._open) {
+            this._open = false;
+        }
+    }
 
     public ngOnInit() {
     }

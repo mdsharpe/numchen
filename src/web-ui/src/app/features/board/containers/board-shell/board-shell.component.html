@@ -1,20 +1,16 @@
 <ng-container *ngIf="board$ | async as board; else noboard">
     <div class="source-stack-container">
-        <app-source-stack *ngFor="let stack of board.sourceStacks; let stackIndex = index"
-                          [stack]="stack"
-                          (cardClick)="sourceStackCardClicked(stackIndex)"></app-source-stack>
+        <app-source-stack *ngFor="let stack of board.sourceStacks; let stackIndex = index" [stack]="stack" (cardClick)="sourceStackCardClicked(stackIndex)"></app-source-stack>
     </div>
     <div class="column-container">
-        <app-column *ngFor="let column of board.columns; let columnIndex = index"
-                    [column]="column"
-                    (addClick)="columnAddClicked(columnIndex)"
-                    (cardClick)="columnCardClicked(columnIndex)"
-                    (removeClick)="columnRemoveClicked(columnIndex)"></app-column>
+        <app-column *ngFor="let column of board.columns; let columnIndex = index" [column]="column" (addClick)="columnAddClicked(columnIndex)"
+            (cardClick)="columnCardClicked(columnIndex)" (removeClick)="columnRemoveClicked(columnIndex)"></app-column>
     </div>
     <div class="board-footer">
-        <app-goal-stack *ngFor="let stack of board.goalStacks"
-                        [stack]="stack"></app-goal-stack>
-        <app-score [score]="board.score"></app-score>
+        <div class="goal-stacks-container">
+            <app-goal-stack *ngFor="let stack of board.goalStacks" [stack]="stack"></app-goal-stack>
+        </div>
+        <app-score class="app-score" [score]="board.score"></app-score>
     </div>
 </ng-container>
 <ng-template #noboard>

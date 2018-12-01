@@ -1,7 +1,17 @@
+:host() {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .score {
     font-size: 1.4rem;
 }
 
-.of-total {
+.of {
+    font-size: .6rem;
+}
+
+.total {
     font-size: .8rem;
 }
