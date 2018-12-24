@@ -12,6 +12,12 @@ steps:
     versionSpec: '10.x'
   displayName: 'Install Node.js'
 
+- task: DotNetCoreCLI@2
+  displayName: ".NET build"
+  inputs:
+    projects: '**/*.csproj'
+    arguments: --configuration $(BuildConfiguration)
+
 - script: |
     cd src/web-ui
     npm install -g @angular/cli
