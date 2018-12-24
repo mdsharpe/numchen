@@ -1,0 +1,14 @@
+/home/matt/source/Numchen/src/web-api/bin/Debug/netcoreapp2.2/web-api.deps.json
+/home/matt/source/Numchen/src/web-api/bin/Debug/netcoreapp2.2/web-api.runtimeconfig.json
+/home/matt/source/Numchen/src/web-api/bin/Debug/netcoreapp2.2/web-api.runtimeconfig.dev.json
+/home/matt/source/Numchen/src/web-api/bin/Debug/netcoreapp2.2/web-api.dll
+/home/matt/source/Numchen/src/web-api/bin/Debug/netcoreapp2.2/web-api.pdb
+/home/matt/source/Numchen/src/web-api/obj/Debug/netcoreapp2.2/web-api.csprojAssemblyReference.cache
+/home/matt/source/Numchen/src/web-api/obj/Debug/netcoreapp2.2/web-api.csproj.CoreCompileInputs.cache
+/home/matt/source/Numchen/src/web-api/obj/Debug/netcoreapp2.2/web-api.RazorAssemblyInfo.cache
+/home/matt/source/Numchen/src/web-api/obj/Debug/netcoreapp2.2/web-api.RazorAssemblyInfo.cs
+/home/matt/source/Numchen/src/web-api/obj/Debug/netcoreapp2.2/web-api.AssemblyInfoInputs.cache
+/home/matt/source/Numchen/src/web-api/obj/Debug/netcoreapp2.2/web-api.AssemblyInfo.cs
+/home/matt/source/Numchen/src/web-api/obj/Debug/netcoreapp2.2/web-api.RazorTargetAssemblyInfo.cache
+/home/matt/source/Numchen/src/web-api/obj/Debug/netcoreapp2.2/web-api.dll
+/home/matt/source/Numchen/src/web-api/obj/Debug/netcoreapp2.2/web-api.pdb
