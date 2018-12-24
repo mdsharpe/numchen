@@ -13,10 +13,10 @@ steps:
   displayName: 'Install Node.js'
 
 - task: DotNetCoreCLI@2
-  displayName: ".NET build"
   inputs:
-    projects: '**/*.csproj'
-    arguments: --configuration $(BuildConfiguration)
+    command: publish
+    publishWebProjects: True
+    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
 
 - script: |
     cd src/web-ui
