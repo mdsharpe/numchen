@@ -10,6 +10,7 @@
         <div class="goal-stacks-container">
             <app-goal-stack *ngFor="let stack of board.goalStacks" [stack]="stack"></app-goal-stack>
         </div>
+        <app-undo-button (undoClick)="undoClicked()" [canUndo]="false"></app-undo-button>
         <app-score class="app-score" [score]="board.score"></app-score>
     </div>
 </ng-container>

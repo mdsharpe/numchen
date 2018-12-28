@@ -48,4 +48,8 @@ export class BoardShellComponent implements OnInit, OnDestroy {
     public columnRemoveClicked(columnIndex: number) {
         this._service.moveLastToGoal(columnIndex);
     }
+
+    public undoClicked() {
+        alert("Can't do that yet!");
+    }
 }

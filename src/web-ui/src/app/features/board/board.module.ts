@@ -10,6 +10,7 @@ import { SourceStackComponent } from './components/source-stack/source-stack.com
 import { GoalStackComponent } from './components/goal-stack/goal-stack.component';
 import { CardComponent } from './components/card/card.component';
 import { ScoreComponent } from './components/score/score.component';
+import { UndoButtonComponent } from './components/undo-button/undo-button.component';
 
 @NgModule({
   imports: [
@@ -23,7 +24,8 @@ import { ScoreComponent } from './components/score/score.component';
     SourceStackComponent,
     GoalStackComponent,
     CardComponent,
-    ScoreComponent
+    ScoreComponent,
+    UndoButtonComponent
   ],
   exports: [BoardShellComponent]
 })

@@ -2,7 +2,8 @@
        value="&#x25BC;"
        (click)="addClicked()"
        class="colbutton colbutton--add"
-       [disabled]="!column?.canPush" />
+       [disabled]="!column?.canPush"
+       title="Add to this column" />
 <div class="card-column">
     <app-card *ngFor="let card of column?.cards; let cardIndex = index"
               [card]="card"
@@ -15,4 +16,5 @@
        value="&#x25BC;"
        (click)="removeClicked()"
        class="colbutton colbutton--remove"
-       [disabled]="!column?.canMoveToGoal" />
+       [disabled]="!column?.canMoveToGoal"
+       title="Remove from this column" />
