@@ -1,5 +1,12 @@
 version: 0.0.{build}
+
 image: Ubuntu1804
+
+install:
+  - ps: Install-Product node $env:nodejs_version
+  - npm install -g npm
+
 build_script:
-- sh: npm build --prod
+  - sh: npm build --prod
+  
 test: off
