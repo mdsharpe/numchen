@@ -14,5 +14,7 @@ build_script:
   - cd src/web-ui
   - npm ci
   - ng build --prod
+  - cd ../..
   
-test: off
+artifacts:
+  - path: src/web-ui/dist
