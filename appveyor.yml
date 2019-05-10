@@ -10,6 +10,8 @@ install:
   - npm install -g npm
 
 build_script:
-  - sh: npm build --prod
+  - cd web-ui
+  - npm ci
+  - npm build --prod
   
 test: off
