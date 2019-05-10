@@ -10,7 +10,7 @@ install:
   - npm install -g npm
 
 build_script:
-  - cd web-ui
+  - cd src/web-ui
   - npm ci
   - npm build --prod
   
