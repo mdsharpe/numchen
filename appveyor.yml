@@ -2,7 +2,11 @@ version: 0.0.{build}
 
 image: Ubuntu1804
 
+environment:
+  nodejs_version: 10
+
 install:
+  - nvm install $nodejs_version
   - npm install -g npm
 
 build_script:
