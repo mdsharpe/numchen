@@ -12,6 +12,6 @@ install:
 build_script:
   - cd src/web-ui
   - npm ci
-  - npm build --prod
+  - ng build --prod
   
 test: off
