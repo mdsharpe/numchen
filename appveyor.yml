@@ -17,10 +17,11 @@ build_script:
   - cd ../..
   
 artifacts:
-  - path: src/web-ui/dist
+  - path: src/web-ui/dist/web-ui
+    name: web-ui
 
 deploy:
   provider: Environment
   name: mdsharpe
   folder: vhosts/default/numchen
-  application: dist.zip
+  application: web-ui.zip
