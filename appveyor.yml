@@ -24,4 +24,4 @@ deploy:
   provider: Environment
   name: mdsharpe
   folder: vhosts/default/numchen
-  application: web-ui.zip
+  application: web-ui
