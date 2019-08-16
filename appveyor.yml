@@ -22,4 +22,4 @@ artifacts:
 
 deploy:
   provider: Environment
-  name: mdsharpe
+  name: mdsharpe-numchen
