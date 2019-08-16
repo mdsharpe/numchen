@@ -1,7 +1,7 @@
 $menu-width: 25vw;
 $button-height: 9vh;
 
-:host() {
+:host {
     position: absolute;
     top: (100vh - $button-height);
     left: calc(-25vw + 3rem);
