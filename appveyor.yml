@@ -23,3 +23,4 @@ artifacts:
 deploy:
   provider: Environment
   name: mdsharpe-numchen
+  remove_files: true
