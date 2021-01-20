@@ -20,7 +20,7 @@
         "@angular/router": "^8.2.6",
         "@ngxs/store": "^3.5.1",
         "core-js": "^3.2.1",
-        "immer": "^4.0.0",
+        "immer": "^8.0.1",
         "lodash": "^4.17.15",
         "rxjs": "~6.5.3",
         "zone.js": "~0.10.2"
