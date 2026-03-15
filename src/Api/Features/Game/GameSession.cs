@@ -19,6 +19,11 @@ public class GameSession
         _playerNamesByConnectionId[connectionId] = playerName;
     }
 
+    public bool GetHasPlayer(string connectionId)
+    {
+        return _playerNamesByConnectionId.ContainsKey(connectionId);
+    }
+
     public string GetPlayerName(string connectionId)
     {
         return _playerNamesByConnectionId[connectionId];

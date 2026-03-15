@@ -33,4 +33,43 @@ public class GameHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, session.Id);
         await Clients.Group(session.Id).SendAsync("PlayerJoined", playerName);
     }
+
+    public async Task StartGame()
+    {
+        var session = GetSessionForCurrentConnection();
+
+        session.Game.Start();
+        var card = session.Game.DrawCard();
+
+        await Clients.Group(session.Id).SendAsync("CardDrawn", card.Value);
+    }
+
+    public async Task PlaceCard(int columnIndex)
+    {
+        var session = GetSessionForCurrentConnection();
+
+        session.Game.PlaceCard(Context.ConnectionId, columnIndex);
+
+        if (session.Game.State == Domain.GameState.ReadyToDraw)
+        {
+            var card = session.Game.DrawCard();
+            await Clients.Group(session.Id).SendAsync("CardDrawn", card.Value);
+        }
+        else if (session.Game.State == Domain.GameState.Finished)
+        {
+            await Clients.Group(session.Id).SendAsync("GameFinished");
+        }
+    }
+
+    public void MoveToDestination(int columnIndex)
+    {
+        var session = GetSessionForCurrentConnection();
+        session.Game.MoveToDestination(Context.ConnectionId, columnIndex);
+    }
+
+    private GameSession GetSessionForCurrentConnection()
+    {
+        return _store.GetSessionByConnectionId(Context.ConnectionId)
+            ?? throw new HubException("Not in a game.");
+    }
 }

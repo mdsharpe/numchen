@@ -13,3 +13,4 @@ Building in vertical slices, each delivering something runnable:
 
 - Methods should be named beginning with a verb (e.g. `GetCanMoveToDestination` not `CanMoveToDestination`). Properties like `IsComplete` are fine.
 - Each C# attribute should be on its own line, not combined (e.g. `[Theory]` and `[AutoData]` on separate lines, not `[Theory, AutoData]`).
+- All code blocks must use curly braces, including single-line `if` statements.

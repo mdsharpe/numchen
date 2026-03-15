@@ -5,7 +5,7 @@ namespace Numchen.Api.Features.Game;
 public class GameSessionStore
 {
     private readonly ConcurrentDictionary<string, GameSession> _sessions = new();
-    
+
     public GameSession CreateSession()
     {
         var joinCode = GenerateJoinCode();
@@ -18,6 +18,12 @@ public class GameSessionStore
     {
         return _sessions.Values
             .FirstOrDefault(s => s.JoinCode.Equals(joinCode, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public GameSession? GetSessionByConnectionId(string connectionId)
+    {
+        return _sessions.Values
+            .FirstOrDefault(s => s.GetHasPlayer(connectionId));
     }
 
     private static string GenerateJoinCode()
