@@ -11,19 +11,18 @@ public class GameHub : Hub
         _store = store;
     }
 
-    public async Task<string> CreateGame(string playerName)
+    public async Task<object> CreateGame(string playerName)
     {
         var session = _store.CreateSession();
 
         session.JoinPlayer(Context.ConnectionId, playerName);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, session.Id);
-        await Clients.Caller.SendAsync("PlayerJoined", playerName);
 
-        return session.JoinCode;
+        return new { JoinCode = session.JoinCode, Players = session.GetPlayerNames() };
     }
 
-    public async Task JoinGame(string joinCode, string playerName)
+    public async Task<object> JoinGame(string joinCode, string playerName)
     {
         var session = _store.GetSessionByJoinCode(joinCode)
             ?? throw new HubException("Game not found.");
@@ -31,7 +30,9 @@ public class GameHub : Hub
         session.JoinPlayer(Context.ConnectionId, playerName);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, session.Id);
-        await Clients.Group(session.Id).SendAsync("PlayerJoined", playerName);
+        await Clients.OthersInGroup(session.Id).SendAsync("PlayerJoined", playerName);
+
+        return new { Players = session.GetPlayerNames() };
     }
 
     public async Task StartGame()

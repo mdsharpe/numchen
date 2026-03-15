@@ -28,4 +28,9 @@ public class GameSession
     {
         return _playerNamesByConnectionId[connectionId];
     }
+
+    public IReadOnlyList<string> GetPlayerNames()
+    {
+        return _playerNamesByConnectionId.Values.ToList();
+    }
 }

@@ -58,8 +58,8 @@ const router = useRouter();
 const hub = getGameHub();
 
 const joinCode = route.params.joinCode as string;
-const myName = route.query.name as string;
-const players = ref<string[]>([myName]);
+const initialPlayers = (history.state.players as string[]) ?? [];
+const players = ref<string[]>(initialPlayers);
 const gameStarted = ref(false);
 const gameFinished = ref(false);
 const currentCard = ref<number | null>(null);
@@ -83,8 +83,8 @@ function onGameFinished() {
 }
 
 onMounted(() => {
-  if (!myName) {
-    router.replace({ name: "lobby", query: { joinCode } });
+  if (initialPlayers.length === 0) {
+    router.replace({ name: "lobby" });
     return;
   }
 

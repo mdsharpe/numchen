@@ -4,6 +4,15 @@ import {
   type HubConnection,
 } from "@microsoft/signalr";
 
+export interface CreateGameResult {
+  joinCode: string;
+  players: string[];
+}
+
+export interface JoinGameResult {
+  players: string[];
+}
+
 export interface GameHubEvents {
   PlayerJoined: (playerName: string) => void;
   CardDrawn: (cardValue: number) => void;
@@ -38,12 +47,12 @@ export class GameHubClient {
     this.connection.off(event, handler as (...args: any[]) => void);
   }
 
-  async createGame(playerName: string): Promise<string> {
-    return await this.connection.invoke<string>("CreateGame", playerName);
+  async createGame(playerName: string): Promise<CreateGameResult> {
+    return await this.connection.invoke<CreateGameResult>("CreateGame", playerName);
   }
 
-  async joinGame(joinCode: string, playerName: string): Promise<void> {
-    await this.connection.invoke("JoinGame", joinCode, playerName);
+  async joinGame(joinCode: string, playerName: string): Promise<JoinGameResult> {
+    return await this.connection.invoke<JoinGameResult>("JoinGame", joinCode, playerName);
   }
 
   async startGame(): Promise<void> {
