@@ -15,4 +15,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      '/hub/game': {
+        target: 'http://localhost:5000',
+        rewrite: (path) => path.replace(/^\/hub/, ''),
+        ws: true,
+      },
+    },
+  },
 })
