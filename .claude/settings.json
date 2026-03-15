@@ -1,3 +1,11 @@
 {
-    "model": "opus"
+    "model": "opus",
+    "permissions": {
+        "allow": [
+            "Bash(git *)",
+            "Bash(dotnet build *)",
+            "Bash(dotnet test *)",
+            "Bash(npm run *)"
+        ]
+    }
 }
