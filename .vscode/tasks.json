@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "API",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["watch", "run", "--project", "src/Api"],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "UI",
+      "type": "process",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}/src/ui"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "API + UI",
+      "dependsOn": ["API", "UI"],
+      "problemMatcher": []
+    }
+  ]
+}
