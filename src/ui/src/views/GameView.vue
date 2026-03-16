@@ -18,18 +18,27 @@
       </div>
 
       <div class="columns">
-        <div
-          v-for="(column, index) in columns"
-          :key="index"
-          class="column"
-          @click="onColumnClick(index)"
-        >
+        <div v-for="(column, index) in columns" :key="index" class="column">
           <div class="column-header">Col {{ index + 1 }}</div>
           <div class="card-stack">
-            <div v-for="(card, cardIndex) in column" :key="cardIndex" class="card">
+            <div
+              v-for="(card, cardIndex) in column"
+              :key="cardIndex"
+              class="card"
+              :class="{
+                'top-card': cardIndex === column.length - 1,
+              }"
+              @click="cardIndex === column.length - 1 && onTopCardClick(index)"
+            >
               {{ card }}
             </div>
-            <div v-if="column.length === 0" class="card empty">-</div>
+          </div>
+          <div
+            v-if="currentCard !== null && !hasPlaced"
+            class="drop-zone"
+            @click="onPlaceCard(index)"
+          >
+            Place here
           </div>
         </div>
       </div>
@@ -103,39 +112,30 @@ async function startGame() {
   await hub.startGame();
 }
 
-async function onColumnClick(index: number) {
+async function onPlaceCard(index: number) {
+  if (currentCard.value === null || hasPlaced.value) {
+    return;
+  }
+
+  const card = currentCard.value;
+  columns.value[index]!.push(card);
+  hasPlaced.value = true;
+  currentCard.value = null;
+  await hub.placeCard(index);
+}
+
+async function onTopCardClick(index: number) {
   const column = columns.value[index]!;
+  if (column.length === 0) {
+    return;
+  }
 
-  if (currentCard.value !== null && !hasPlaced.value) {
-    // Place the drawn card
-    await hub.placeCard(index);
-    column.push(currentCard.value);
-    hasPlaced.value = true;
-    currentCard.value = null;
-  } else {
-    // Try to move top card to destination
-    if (column.length === 0) {
-      return;
-    }
-
-    try {
-      await hub.moveToDestination(index);
-      const card = column.pop()!;
-      // Find the right destination pile
-      if (card === 1) {
-        const emptyPile = destinations.value.indexOf(0);
-        if (emptyPile !== -1) {
-          destinations.value[emptyPile] = card;
-        }
-      } else {
-        const pileIndex = destinations.value.indexOf(card - 1);
-        if (pileIndex !== -1) {
-          destinations.value[pileIndex] = card;
-        }
-      }
-    } catch {
-      // Move wasn't valid, ignore
-    }
+  try {
+    const { pileIndex } = await hub.moveToDestination(index);
+    const card = column.pop()!;
+    destinations.value[pileIndex] = card;
+  } catch {
+    // Move wasn't valid, ignore
   }
 }
 </script>
@@ -172,14 +172,8 @@ async function onColumnClick(index: number) {
 }
 
 .column {
-  cursor: pointer;
   text-align: center;
   min-width: 60px;
-}
-
-.column:hover {
-  background-color: #f0f0f0;
-  border-radius: 4px;
 }
 
 .column-header {
@@ -201,6 +195,7 @@ async function onColumnClick(index: number) {
   text-align: center;
   font-weight: bold;
   background: white;
+  color: #333;
 }
 
 .card.drawn {
@@ -210,9 +205,34 @@ async function onColumnClick(index: number) {
   color: blue;
 }
 
+.card.top-card {
+  cursor: pointer;
+  border-color: #666;
+}
+
+.card.top-card:hover {
+  background-color: #e8f5e9;
+  border-color: green;
+}
+
 .card.empty {
   border-style: dashed;
   color: #999;
+}
+
+.drop-zone {
+  cursor: pointer;
+  margin-top: 4px;
+  padding: 0.5rem;
+  border: 2px dashed blue;
+  border-radius: 4px;
+  color: blue;
+  font-size: 0.75rem;
+  background: #e3f2fd;
+}
+
+.drop-zone:hover {
+  background: #bbdefb;
 }
 
 .destinations {

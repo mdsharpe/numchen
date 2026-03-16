@@ -62,10 +62,12 @@ public class GameHub : Hub
         }
     }
 
-    public void MoveToDestination(int columnIndex)
+    public object MoveToDestination(int columnIndex)
     {
         var session = GetSessionForCurrentConnection();
-        session.Game.MoveToDestination(Context.ConnectionId, columnIndex);
+        var pileIndex = session.Game.MoveToDestination(Context.ConnectionId, columnIndex);
+
+        return new { PileIndex = pileIndex };
     }
 
     private GameSession GetSessionForCurrentConnection()

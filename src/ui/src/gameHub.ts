@@ -13,6 +13,10 @@ export interface JoinGameResult {
   players: string[];
 }
 
+export interface MoveToDestinationResult {
+  pileIndex: number;
+}
+
 export interface GameHubEvents {
   PlayerJoined: (playerName: string) => void;
   CardDrawn: (cardValue: number) => void;
@@ -63,8 +67,8 @@ export class GameHubClient {
     await this.connection.invoke("PlaceCard", columnIndex);
   }
 
-  async moveToDestination(columnIndex: number): Promise<void> {
-    await this.connection.invoke("MoveToDestination", columnIndex);
+  async moveToDestination(columnIndex: number): Promise<MoveToDestinationResult> {
+    return await this.connection.invoke<MoveToDestinationResult>("MoveToDestination", columnIndex);
   }
 }
 
