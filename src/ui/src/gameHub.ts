@@ -1,4 +1,5 @@
 import {
+  HttpTransportType,
   HubConnectionBuilder,
   HubConnectionState,
   type HubConnection,
@@ -27,8 +28,11 @@ export class GameHubClient {
   private connection: HubConnection;
 
   constructor() {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const hubUrl = apiUrl ? `${apiUrl}/game` : "/hub/game";
+
     this.connection = new HubConnectionBuilder()
-      .withUrl("/hub/game")
+      .withUrl(hubUrl, { transport: HttpTransportType.LongPolling })
       .withAutomaticReconnect()
       .build();
   }
