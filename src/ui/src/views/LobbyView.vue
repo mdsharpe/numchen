@@ -1,24 +1,38 @@
 <template>
   <div class="lobby">
-    <h1>Numchen</h1>
+    <h1 class="title">Numchen</h1>
 
-    <div v-if="!isConnected">Connecting...</div>
+    <div v-if="!isConnected" class="connecting">Connecting...</div>
 
-    <div v-else>
-      <div class="name-input">
+    <div v-else class="panel">
+      <div class="field">
         <label for="playerName">Your name</label>
-        <input id="playerName" v-model="playerName" maxlength="20" />
+        <input
+          id="playerName"
+          v-model="playerName"
+          maxlength="20"
+          placeholder="Enter your name"
+        />
       </div>
 
       <div class="actions">
-        <div class="join">
-          <input v-model="joinCode" placeholder="Join code" maxlength="4" />
-          <button :disabled="!playerName || !joinCode" @click="joinGame">Join</button>
+        <button class="btn primary" :disabled="!playerName" @click="createGame">
+          Create Game
+        </button>
+
+        <div class="divider"><span>or join an existing game</span></div>
+
+        <div class="join-row">
+          <input
+            v-model="joinCode"
+            placeholder="Code"
+            maxlength="4"
+            class="code-input"
+          />
+          <button class="btn" :disabled="!playerName || !joinCode" @click="joinGame">
+            Join
+          </button>
         </div>
-
-        <div class="divider">or</div>
-
-        <button :disabled="!playerName" @click="createGame">Create Game</button>
       </div>
 
       <div v-if="error" class="error">{{ error }}</div>
@@ -84,45 +98,133 @@ async function joinGame() {
 
 <style scoped>
 .lobby {
-  max-width: 400px;
-  margin: 2rem auto;
+  max-width: 380px;
+  margin: 4rem auto;
   text-align: center;
 }
 
-.name-input {
-  margin: 1rem 0;
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 2rem;
 }
 
-.name-input input {
-  margin-left: 0.5rem;
-  padding: 0.25rem 0.5rem;
+.connecting {
+  color: var(--color-text);
+  opacity: 0.6;
+}
+
+.panel {
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.field {
+  margin-bottom: 1.5rem;
+}
+
+.field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+  opacity: 0.7;
+}
+
+.field input,
+.code-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field input:focus,
+.code-input:focus {
+  border-color: var(--color-border-hover);
 }
 
 .actions {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  align-items: center;
 }
 
-.join {
+.btn {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+  background: var(--color-background-mute);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  opacity: 0.5;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.join-row {
   display: flex;
   gap: 0.5rem;
 }
 
-.join input {
-  width: 6rem;
-  padding: 0.25rem 0.5rem;
+.code-input {
+  width: 7rem;
   text-transform: uppercase;
-}
-
-.divider {
-  color: #999;
-  font-size: 0.875rem;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.15em;
 }
 
 .error {
-  color: red;
+  color: #dc2626;
   margin-top: 1rem;
+  font-size: 0.875rem;
 }
 </style>

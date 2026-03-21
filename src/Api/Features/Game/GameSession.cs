@@ -126,6 +126,11 @@ public class GameSession
         return _playerIdsByConnectionId.TryGetValue(connectionId, out var playerId) ? playerId : null;
     }
 
+    public string GetConnectionIdByPlayerId(string playerId)
+    {
+        return _connectionIdsByPlayerId[playerId];
+    }
+
     public void StartPlacementTimer(Action<GameSession> onExpired, TimeSpan timeout)
     {
         CancelPlacementTimer();

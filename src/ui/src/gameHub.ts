@@ -35,6 +35,7 @@ export interface MoveToDestinationResult {
 export interface GameHubEvents {
   PlayerJoined: (playerName: string) => void;
   PlayerLeft: (playerName: string) => void;
+  CardAutoPlaced: (columnIndex: number) => void;
   CardDrawn: (cardValue: number, deadline: number | null) => void;
   GameFinished: () => void;
 }

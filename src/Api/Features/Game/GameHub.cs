@@ -54,6 +54,8 @@ public class GameHub : Hub
 
     private void OnPlacementTimerExpired(GameSession session)
     {
+        IReadOnlyList<(string PlayerId, int ColumnIndex)> placements;
+
         lock (session.Lock)
         {
             if (session.Game.State != Domain.GameState.PlacingCard)
@@ -61,7 +63,15 @@ public class GameHub : Hub
                 return;
             }
 
-            session.Game.AutoPlaceForUnreadyPlayers();
+            placements = session.Game.AutoPlaceForUnreadyPlayers();
+        }
+
+        foreach (var (playerId, columnIndex) in placements)
+        {
+            var connectionId = session.GetConnectionIdByPlayerId(playerId);
+            _hubContext.Clients.Client(connectionId)
+                .SendAsync("CardAutoPlaced", columnIndex)
+                .GetAwaiter().GetResult();
         }
 
         var clients = _hubContext.Clients.Group(session.Id);

@@ -102,20 +102,24 @@ public class Game
         }
     }
 
-    public void AutoPlaceForUnreadyPlayers()
+    public IReadOnlyList<(string PlayerId, int ColumnIndex)> AutoPlaceForUnreadyPlayers()
     {
         if (State != GameState.PlacingCard)
         {
             throw new InvalidOperationException("No card to place.");
         }
 
+        var placements = new List<(string PlayerId, int ColumnIndex)>();
         var unreadyPlayers = _players.Keys.Where(id => !_readyPlayers.Contains(id)).ToList();
         foreach (var playerId in unreadyPlayers)
         {
             var board = _players[playerId];
             var columnIndex = GetColumnWithFewestCards(board);
             PlaceCard(playerId, columnIndex);
+            placements.Add((playerId, columnIndex));
         }
+
+        return placements;
     }
 
     private static int GetColumnWithFewestCards(PlayerBoard board)

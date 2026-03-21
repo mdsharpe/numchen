@@ -1,39 +1,66 @@
 <template>
   <div class="game">
     <div class="header">
-      <span class="join-code">Code: {{ joinCode }}</span>
-      <span class="players">Players: {{ players.join(", ") }}</span>
-      <button v-if="!gameStarted" @click="startGame">Start Game</button>
-      <button v-if="!gameFinished" @click="toggleAutoPlay" :class="{ active: autoPlay }">
-        {{ autoPlay ? "Auto Play: ON" : "Auto Play: OFF" }}
-      </button>
+      <div class="header-left">
+        <span class="join-code">{{ joinCode }}</span>
+        <span class="player-list">{{ players.join(", ") }}</span>
+      </div>
+      <div class="header-right">
+        <button
+          v-if="!gameStarted"
+          class="btn primary"
+          @click="startGame"
+        >
+          Start Game
+        </button>
+        <button
+          v-if="!gameFinished"
+          class="btn"
+          :class="{ active: autoPlay }"
+          @click="toggleAutoPlay"
+        >
+          {{ autoPlay ? "Auto Play: ON" : "Auto Play" }}
+        </button>
+      </div>
     </div>
 
-    <div v-if="gameFinished" class="finished">Game Over!</div>
+    <div v-if="gameFinished" class="finished">
+      <div class="finished-icon">&#10003;</div>
+      <div class="finished-text">Game Over!</div>
+    </div>
 
     <div v-if="gameStarted" class="board">
-      <div v-if="currentCard !== null && !hasPlaced" class="current-card">
-        <div class="card drawn">{{ currentCard }}</div>
-        <div class="label">Place this card</div>
-        <div v-if="countdown !== null" class="countdown" :class="{ urgent: countdown <= 5 }">
-          {{ countdown }}s
+      <div v-if="currentCard !== null && !hasPlaced" class="draw-area">
+        <div class="drawn-card">{{ currentCard }}</div>
+        <div class="draw-label">Place this card</div>
+        <div v-if="countdown !== null" class="timer-bar-container">
+          <div
+            class="timer-bar"
+            :class="{ urgent: countdown <= 5 }"
+            :style="{ width: timerPercent + '%' }"
+          ></div>
         </div>
       </div>
-      <div v-else-if="hasPlaced" class="current-card">
-        <div class="label">Waiting for other players...</div>
-        <div v-if="countdown !== null" class="countdown">{{ countdown }}s</div>
+      <div v-else-if="hasPlaced" class="draw-area waiting">
+        <div class="draw-label">Waiting for other players...</div>
+        <div v-if="countdown !== null" class="timer-bar-container">
+          <div
+            class="timer-bar"
+            :style="{ width: timerPercent + '%' }"
+          ></div>
+        </div>
       </div>
 
       <div class="columns">
         <div v-for="(column, index) in columns" :key="index" class="column">
-          <div class="column-header">Col {{ index + 1 }}</div>
+          <div class="column-label">{{ index + 1 }}</div>
           <div class="card-stack">
             <div
               v-for="(card, cardIndex) in column"
               :key="cardIndex"
               class="card"
               :class="{
-                'top-card': cardIndex === column.length - 1,
+                'top-card': cardIndex === column.length - 1 && !isProcessing && canMoveToDestination(card),
               }"
               @click="cardIndex === column.length - 1 && !isProcessing && onTopCardClick(index)"
             >
@@ -46,17 +73,17 @@
             :class="{ disabled: isProcessing }"
             @click="onPlaceCard(index)"
           >
-            Place here
+            &#9660;
           </div>
         </div>
       </div>
 
       <div class="destinations">
-        <div class="label">Destination Piles</div>
+        <div class="destinations-label">Destination Piles</div>
         <div class="piles">
           <div v-for="(pile, index) in destinations" :key="index" class="pile">
-            <div class="card" :class="{ empty: pile === 0 }">
-              {{ pile > 0 ? pile : "-" }}
+            <div class="dest-card" :class="{ empty: pile === 0 }">
+              {{ pile > 0 ? pile : "" }}
             </div>
           </div>
         </div>
@@ -66,13 +93,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getGameHub } from "@/gameHub";
 
 const route = useRoute();
 const router = useRouter();
 const hub = getGameHub();
+
+const PLACEMENT_TIMEOUT_SECONDS = 30;
 
 const joinCode = route.params.joinCode as string;
 const players = ref<string[]>([]);
@@ -88,6 +117,13 @@ const isProcessing = ref(false);
 let autoPlayGeneration = 0;
 const countdown = ref<number | null>(null);
 let countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+const timerPercent = computed(() => {
+  if (countdown.value === null) {
+    return 0;
+  }
+  return Math.max(0, (countdown.value / PLACEMENT_TIMEOUT_SECONDS) * 100);
+});
 
 function startCountdown(deadline: number | null) {
   stopCountdown();
@@ -121,6 +157,16 @@ function onPlayerJoined(playerName: string) {
 
 function onPlayerLeft(playerName: string) {
   players.value = players.value.filter((p) => p !== playerName);
+}
+
+function onCardAutoPlaced(columnIndex: number) {
+  if (currentCard.value === null || hasPlaced.value) {
+    return;
+  }
+
+  columns.value[columnIndex]!.push(currentCard.value);
+  hasPlaced.value = true;
+  currentCard.value = null;
 }
 
 function onCardDrawn(cardValue: number, deadline: number | null) {
@@ -185,6 +231,7 @@ async function tryRejoin(): Promise<boolean> {
 onMounted(async () => {
   hub.on("PlayerJoined", onPlayerJoined);
   hub.on("PlayerLeft", onPlayerLeft);
+  hub.on("CardAutoPlaced", onCardAutoPlaced);
   hub.on("CardDrawn", onCardDrawn);
   hub.on("GameFinished", onGameFinished);
 
@@ -197,6 +244,7 @@ onMounted(async () => {
 onUnmounted(() => {
   hub.off("PlayerJoined", onPlayerJoined);
   hub.off("PlayerLeft", onPlayerLeft);
+  hub.off("CardAutoPlaced", onCardAutoPlaced);
   hub.off("CardDrawn", onCardDrawn);
   hub.off("GameFinished", onGameFinished);
   stopCountdown();
@@ -365,18 +413,84 @@ async function onTopCardClick(index: number) {
 <style scoped>
 .game {
   max-width: 800px;
-  margin: 1rem auto;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
+/* Header */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid #ccc;
-  margin-bottom: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1.5rem;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.join-code {
+  background: var(--color-background-mute);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
+.player-list {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.btn {
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-background-mute);
+}
+
+.btn.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+.btn.primary:hover {
+  background: #1d4ed8;
+}
+
+.btn.active {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: white;
+}
+
+.btn.active:hover {
+  background: #15803d;
+}
+
+/* Board */
 .board {
   display: flex;
   flex-direction: column;
@@ -384,122 +498,196 @@ async function onTopCardClick(index: number) {
   gap: 2rem;
 }
 
-.current-card {
+/* Draw area */
+.draw-area {
   text-align: center;
+  height: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
+.drawn-card {
+  width: 64px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  border: 2px solid #2563eb;
+  border-radius: 10px;
+  background: var(--color-background);
+  color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.draw-label {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  font-weight: 500;
+}
+
+.timer-bar-container {
+  width: 120px;
+  height: 4px;
+  background: var(--color-background-mute);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.timer-bar {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 2px;
+  transition: width 0.25s linear;
+}
+
+.timer-bar.urgent {
+  background: #dc2626;
+}
+
+/* Columns */
 .columns {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .column {
   text-align: center;
-  min-width: 60px;
+  min-width: 56px;
 }
 
-.column-header {
-  font-weight: bold;
-  margin-bottom: 0.5rem;
+.column-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.4;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
 }
 
 .card-stack {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-height: 40px;
 }
 
 .card {
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 0.5rem;
-  min-width: 40px;
-  text-align: center;
-  font-weight: bold;
-  background: white;
-  color: #333;
-}
-
-.card.drawn {
-  font-size: 1.5rem;
-  padding: 1rem;
-  border-color: blue;
-  color: blue;
+  width: 52px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: var(--color-background);
+  color: var(--color-text);
+  user-select: none;
 }
 
 .card.top-card {
   cursor: pointer;
-  border-color: #666;
+  border-color: #16a34a;
+  color: #16a34a;
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.15);
+  transition: all 0.15s;
 }
 
 .card.top-card:hover {
-  background-color: #e8f5e9;
-  border-color: green;
-}
-
-.card.empty {
-  border-style: dashed;
-  color: #999;
+  background: rgba(22, 163, 74, 0.08);
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
 }
 
 .drop-zone {
   cursor: pointer;
   margin-top: 4px;
-  padding: 0.5rem;
-  border: 2px dashed blue;
-  border-radius: 4px;
-  color: blue;
-  font-size: 0.75rem;
-  background: #e3f2fd;
+  width: 52px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #2563eb;
+  border-radius: 6px;
+  color: #2563eb;
+  font-size: 0.7rem;
+  background: transparent;
+  transition: all 0.15s;
+  opacity: 0.5;
 }
 
 .drop-zone:hover:not(.disabled) {
-  background: #bbdefb;
+  opacity: 1;
+  background: rgba(37, 99, 235, 0.06);
 }
 
 .drop-zone.disabled {
   cursor: default;
-  opacity: 0.5;
+  opacity: 0.25;
 }
 
+/* Destinations */
 .destinations {
   text-align: center;
+}
+
+.destinations-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.4;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
 }
 
 .piles {
   display: flex;
   gap: 0.5rem;
-  margin-top: 0.5rem;
 }
 
-.label {
-  font-size: 0.875rem;
-  color: #666;
-  margin-top: 0.5rem;
+.dest-card {
+  width: 52px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: var(--color-background-soft);
+  color: var(--color-text);
 }
 
-.countdown {
-  font-size: 0.875rem;
-  color: #666;
-  margin-top: 0.25rem;
+.dest-card.empty {
+  border-style: dashed;
+  opacity: 0.3;
 }
 
-.countdown.urgent {
-  color: #d32f2f;
-  font-weight: bold;
-}
-
-button.active {
-  background-color: #4caf50;
-  color: white;
-  border-color: #388e3c;
-}
-
+/* Finished */
 .finished {
   text-align: center;
-  font-size: 2rem;
-  font-weight: bold;
-  color: green;
-  margin: 2rem;
+  margin: 3rem 0;
+}
+
+.finished-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  background: #16a34a;
+  color: white;
+  border-radius: 50%;
+}
+
+.finished-text {
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 </style>
