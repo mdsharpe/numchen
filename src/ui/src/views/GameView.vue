@@ -85,6 +85,7 @@ const destinations = ref<number[]>([0, 0, 0, 0, 0, 0]);
 const autoPlay = ref(false);
 const autoPlayDelay = 400;
 const isProcessing = ref(false);
+let autoPlayGeneration = 0;
 const countdown = ref<number | null>(null);
 let countdownInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -126,10 +127,11 @@ function onCardDrawn(cardValue: number, deadline: number | null) {
   gameStarted.value = true;
   currentCard.value = cardValue;
   hasPlaced.value = false;
+  autoPlayGeneration++;
   startCountdown(deadline);
 
   if (autoPlay.value) {
-    scheduleAutoPlay();
+    scheduleAutoPlay(autoPlayGeneration);
   }
 }
 
@@ -259,16 +261,23 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function autoMoveToDestinations(): Promise<void> {
+function getIsAutoPlayStale(generation: number): boolean {
+  return !autoPlay.value || generation !== autoPlayGeneration;
+}
+
+async function autoMoveToDestinations(generation: number): Promise<void> {
   let moved = true;
   while (moved) {
     moved = false;
     const movable = findMovableColumns();
     for (const colIndex of movable) {
-      if (!autoPlay.value) {
+      if (getIsAutoPlayStale(generation)) {
         return;
       }
       await sleep(autoPlayDelay);
+      if (getIsAutoPlayStale(generation)) {
+        return;
+      }
       await onTopCardClick(colIndex);
       moved = true;
       break; // Re-check after each move since state changed
@@ -276,16 +285,16 @@ async function autoMoveToDestinations(): Promise<void> {
   }
 }
 
-async function scheduleAutoPlay(): Promise<void> {
+async function scheduleAutoPlay(generation: number): Promise<void> {
   await sleep(autoPlayDelay);
-  if (!autoPlay.value || currentCard.value === null || hasPlaced.value) {
+  if (getIsAutoPlayStale(generation) || currentCard.value === null || hasPlaced.value) {
     return;
   }
 
   // Move any cards to destinations first
-  await autoMoveToDestinations();
+  await autoMoveToDestinations(generation);
 
-  if (!autoPlay.value || currentCard.value === null || hasPlaced.value) {
+  if (getIsAutoPlayStale(generation) || currentCard.value === null || hasPlaced.value) {
     return;
   }
 
@@ -295,7 +304,10 @@ async function scheduleAutoPlay(): Promise<void> {
 
   // Move cards to destinations after placing
   await sleep(autoPlayDelay);
-  await autoMoveToDestinations();
+  if (getIsAutoPlayStale(generation)) {
+    return;
+  }
+  await autoMoveToDestinations(generation);
 }
 
 async function toggleAutoPlay(): Promise<void> {
@@ -305,7 +317,7 @@ async function toggleAutoPlay(): Promise<void> {
     if (!gameStarted.value) {
       await startGame();
     } else if (currentCard.value !== null && !hasPlaced.value) {
-      scheduleAutoPlay();
+      scheduleAutoPlay(autoPlayGeneration);
     }
   }
 }
