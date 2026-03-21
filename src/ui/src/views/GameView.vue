@@ -4,6 +4,9 @@
       <span class="join-code">Code: {{ joinCode }}</span>
       <span class="players">Players: {{ players.join(", ") }}</span>
       <button v-if="!gameStarted" @click="startGame">Start Game</button>
+      <button v-if="!gameFinished" @click="toggleAutoPlay" :class="{ active: autoPlay }">
+        {{ autoPlay ? "Auto Play: ON" : "Auto Play: OFF" }}
+      </button>
     </div>
 
     <div v-if="gameFinished" class="finished">Game Over!</div>
@@ -75,6 +78,8 @@ const currentCard = ref<number | null>(null);
 const hasPlaced = ref(false);
 const columns = ref<number[][]>([[], [], [], [], [], []]);
 const destinations = ref<number[]>([0, 0, 0, 0, 0, 0]);
+const autoPlay = ref(false);
+const autoPlayDelay = 400;
 
 function onPlayerJoined(playerName: string) {
   players.value.push(playerName);
@@ -84,6 +89,10 @@ function onCardDrawn(cardValue: number) {
   gameStarted.value = true;
   currentCard.value = cardValue;
   hasPlaced.value = false;
+
+  if (autoPlay.value) {
+    scheduleAutoPlay();
+  }
 }
 
 function onGameFinished() {
@@ -107,6 +116,116 @@ onUnmounted(() => {
   hub.off("CardDrawn", onCardDrawn);
   hub.off("GameFinished", onGameFinished);
 });
+
+function canMoveToDestination(cardValue: number): boolean {
+  if (cardValue === 1) {
+    return destinations.value.some((d) => d === 0);
+  }
+  return destinations.value.some((d) => d === cardValue - 1);
+}
+
+function findMovableColumns(): number[] {
+  const movable: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const col = columns.value[i]!;
+    if (col.length > 0 && canMoveToDestination(col[col.length - 1]!)) {
+      movable.push(i);
+    }
+  }
+  return movable;
+}
+
+function chooseColumn(cardValue: number): number {
+  // If the card can go to a destination immediately, use the column with the fewest cards
+  if (canMoveToDestination(cardValue)) {
+    return columns.value
+      .map((col, i) => ({ i, len: col.length }))
+      .sort((a, b) => a.len - b.len)[0]!.i;
+  }
+
+  // Prefer empty columns
+  const empty = columns.value
+    .map((col, i) => ({ i, len: col.length }))
+    .filter((c) => c.len === 0);
+  if (empty.length > 0) {
+    return empty[0]!.i;
+  }
+
+  // Place on the column whose top card is closest to (but >=) the new card value,
+  // to keep lower cards near the top. Tie-break by fewest cards.
+  const scored = columns.value
+    .map((col, i) => {
+      const top = col[col.length - 1]!;
+      return { i, top, len: col.length };
+    })
+    .sort((a, b) => {
+      // Prefer columns where top >= cardValue (card goes underneath conceptually)
+      const aAbove = a.top >= cardValue ? 0 : 1;
+      const bAbove = b.top >= cardValue ? 0 : 1;
+      if (aAbove !== bAbove) {
+        return aAbove - bAbove;
+      }
+      // Then prefer fewer cards
+      return a.len - b.len;
+    });
+
+  return scored[0]!.i;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function autoMoveToDestinations(): Promise<void> {
+  let moved = true;
+  while (moved) {
+    moved = false;
+    const movable = findMovableColumns();
+    for (const colIndex of movable) {
+      if (!autoPlay.value) {
+        return;
+      }
+      await sleep(autoPlayDelay);
+      await onTopCardClick(colIndex);
+      moved = true;
+      break; // Re-check after each move since state changed
+    }
+  }
+}
+
+async function scheduleAutoPlay(): Promise<void> {
+  await sleep(autoPlayDelay);
+  if (!autoPlay.value || currentCard.value === null || hasPlaced.value) {
+    return;
+  }
+
+  // Move any cards to destinations first
+  await autoMoveToDestinations();
+
+  if (!autoPlay.value || currentCard.value === null || hasPlaced.value) {
+    return;
+  }
+
+  // Place the card
+  const col = chooseColumn(currentCard.value);
+  await onPlaceCard(col);
+
+  // Move cards to destinations after placing
+  await sleep(autoPlayDelay);
+  await autoMoveToDestinations();
+}
+
+async function toggleAutoPlay(): Promise<void> {
+  autoPlay.value = !autoPlay.value;
+
+  if (autoPlay.value) {
+    if (!gameStarted.value) {
+      await startGame();
+    } else if (currentCard.value !== null && !hasPlaced.value) {
+      scheduleAutoPlay();
+    }
+  }
+}
 
 async function startGame() {
   await hub.startGame();
@@ -249,6 +368,12 @@ async function onTopCardClick(index: number) {
   font-size: 0.875rem;
   color: #666;
   margin-top: 0.5rem;
+}
+
+button.active {
+  background-color: #4caf50;
+  color: white;
+  border-color: #388e3c;
 }
 
 .finished {

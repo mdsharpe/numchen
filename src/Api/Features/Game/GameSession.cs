@@ -5,6 +5,7 @@ public class GameSession
     public string Id { get; } = Guid.NewGuid().ToString();
     public string JoinCode { get; }
     public Domain.Game Game { get; }
+    public Lock Lock { get; } = new();
     private readonly Dictionary<string, string> _playerNamesByConnectionId = new();
 
     public GameSession(string joinCode)

@@ -39,8 +39,12 @@ public class GameHub : Hub
     {
         var session = GetSessionForCurrentConnection();
 
-        session.Game.Start();
-        var card = session.Game.DrawCard();
+        Domain.Card card;
+        lock (session.Lock)
+        {
+            session.Game.Start();
+            card = session.Game.DrawCard();
+        }
 
         await Clients.Group(session.Id).SendAsync("CardDrawn", card.Value);
     }
@@ -49,14 +53,28 @@ public class GameHub : Hub
     {
         var session = GetSessionForCurrentConnection();
 
-        session.Game.PlaceCard(Context.ConnectionId, columnIndex);
+        Domain.Card? nextCard = null;
+        bool finished = false;
 
-        if (session.Game.State == Domain.GameState.ReadyToDraw)
+        lock (session.Lock)
         {
-            var card = session.Game.DrawCard();
-            await Clients.Group(session.Id).SendAsync("CardDrawn", card.Value);
+            session.Game.PlaceCard(Context.ConnectionId, columnIndex);
+
+            if (session.Game.State == Domain.GameState.ReadyToDraw)
+            {
+                nextCard = session.Game.DrawCard();
+            }
+            else if (session.Game.State == Domain.GameState.Finished)
+            {
+                finished = true;
+            }
         }
-        else if (session.Game.State == Domain.GameState.Finished)
+
+        if (nextCard is not null)
+        {
+            await Clients.Group(session.Id).SendAsync("CardDrawn", nextCard.Value.Value);
+        }
+        else if (finished)
         {
             await Clients.Group(session.Id).SendAsync("GameFinished");
         }
@@ -65,9 +83,12 @@ public class GameHub : Hub
     public object MoveToDestination(int columnIndex)
     {
         var session = GetSessionForCurrentConnection();
-        var pileIndex = session.Game.MoveToDestination(Context.ConnectionId, columnIndex);
 
-        return new { PileIndex = pileIndex };
+        lock (session.Lock)
+        {
+            var pileIndex = session.Game.MoveToDestination(Context.ConnectionId, columnIndex);
+            return new { PileIndex = pileIndex };
+        }
     }
 
     private GameSession GetSessionForCurrentConnection()
