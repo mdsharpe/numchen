@@ -15,11 +15,16 @@ public class GameHub : Hub
     {
         var session = _store.CreateSession();
 
-        session.JoinPlayer(Context.ConnectionId, playerName);
+        var playerId = session.JoinPlayer(Context.ConnectionId, playerName);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, session.Id);
 
-        return new { JoinCode = session.JoinCode, Players = session.GetPlayerNames() };
+        return new
+        {
+            JoinCode = session.JoinCode,
+            PlayerId = playerId,
+            Players = session.GetPlayerNames()
+        };
     }
 
     public async Task<object> JoinGame(string joinCode, string playerName)
@@ -27,12 +32,54 @@ public class GameHub : Hub
         var session = _store.GetSessionByJoinCode(joinCode)
             ?? throw new HubException("Game not found.");
 
-        session.JoinPlayer(Context.ConnectionId, playerName);
+        var playerId = session.JoinPlayer(Context.ConnectionId, playerName);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, session.Id);
         await Clients.OthersInGroup(session.Id).SendAsync("PlayerJoined", playerName);
 
-        return new { Players = session.GetPlayerNames() };
+        return new
+        {
+            PlayerId = playerId,
+            Players = session.GetPlayerNames()
+        };
+    }
+
+    public async Task<object> RejoinGame(string playerId)
+    {
+        var session = _store.GetSessionByPlayerId(playerId)
+            ?? throw new HubException("Game not found.");
+
+        lock (session.Lock)
+        {
+            session.RejoinPlayer(Context.ConnectionId, playerId);
+        }
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, session.Id);
+
+        var board = session.Game.GetPlayerBoard(playerId);
+        var columns = new int[Domain.PlayerBoard.ColumnCount][];
+        for (var i = 0; i < Domain.PlayerBoard.ColumnCount; i++)
+        {
+            columns[i] = board.GetColumnCards(i).Select(c => c.Value).ToArray();
+        }
+
+        var destinations = new int[Domain.PlayerBoard.DestinationPileCount];
+        for (var i = 0; i < Domain.PlayerBoard.DestinationPileCount; i++)
+        {
+            destinations[i] = board.GetDestinationPileTopValue(i);
+        }
+
+        return new
+        {
+            JoinCode = session.JoinCode,
+            Players = session.GetPlayerNames(),
+            GameStarted = session.Game.State != Domain.GameState.WaitingForPlayers,
+            GameFinished = session.Game.State == Domain.GameState.Finished,
+            CurrentCard = session.Game.CurrentCard?.Value,
+            HasPlaced = session.GetHasPlayerPlaced(playerId),
+            Columns = columns,
+            Destinations = destinations
+        };
     }
 
     public async Task StartGame()
@@ -52,13 +99,14 @@ public class GameHub : Hub
     public async Task PlaceCard(int columnIndex)
     {
         var session = GetSessionForCurrentConnection();
+        var playerId = session.GetPlayerId(Context.ConnectionId);
 
         Domain.Card? nextCard = null;
         bool finished = false;
 
         lock (session.Lock)
         {
-            session.Game.PlaceCard(Context.ConnectionId, columnIndex);
+            session.Game.PlaceCard(playerId, columnIndex);
 
             if (session.Game.State == Domain.GameState.ReadyToDraw)
             {
@@ -83,10 +131,11 @@ public class GameHub : Hub
     public object MoveToDestination(int columnIndex)
     {
         var session = GetSessionForCurrentConnection();
+        var playerId = session.GetPlayerId(Context.ConnectionId);
 
         lock (session.Lock)
         {
-            var pileIndex = session.Game.MoveToDestination(Context.ConnectionId, columnIndex);
+            var pileIndex = session.Game.MoveToDestination(playerId, columnIndex);
             return new { PileIndex = pileIndex };
         }
     }

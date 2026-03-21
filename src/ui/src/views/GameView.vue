@@ -70,8 +70,7 @@ const router = useRouter();
 const hub = getGameHub();
 
 const joinCode = route.params.joinCode as string;
-const initialPlayers = (history.state.players as string[]) ?? [];
-const players = ref<string[]>(initialPlayers);
+const players = ref<string[]>([]);
 const gameStarted = ref(false);
 const gameFinished = ref(false);
 const currentCard = ref<number | null>(null);
@@ -100,15 +99,54 @@ function onGameFinished() {
   currentCard.value = null;
 }
 
-onMounted(() => {
-  if (initialPlayers.length === 0) {
-    router.replace({ name: "lobby" });
-    return;
+function getSavedSession(): { joinCode: string; playerId: string } | null {
+  try {
+    const raw = sessionStorage.getItem("numchen_session");
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    if (parsed.joinCode === joinCode && parsed.playerId) {
+      return parsed;
+    }
+  } catch {
+    // Ignore invalid data
+  }
+  return null;
+}
+
+async function tryRejoin(): Promise<boolean> {
+  const saved = getSavedSession();
+  if (!saved) {
+    return false;
   }
 
+  try {
+    await hub.start();
+    const result = await hub.rejoinGame(saved.playerId);
+    players.value = result.players;
+    gameStarted.value = result.gameStarted;
+    gameFinished.value = result.gameFinished;
+    currentCard.value = result.currentCard;
+    hasPlaced.value = result.hasPlaced;
+    columns.value = result.columns;
+    destinations.value = result.destinations;
+    return true;
+  } catch {
+    sessionStorage.removeItem("numchen_session");
+    return false;
+  }
+}
+
+onMounted(async () => {
   hub.on("PlayerJoined", onPlayerJoined);
   hub.on("CardDrawn", onCardDrawn);
   hub.on("GameFinished", onGameFinished);
+
+  const rejoined = await tryRejoin();
+  if (!rejoined) {
+    router.replace({ name: "lobby" });
+  }
 });
 
 onUnmounted(() => {

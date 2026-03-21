@@ -7,11 +7,24 @@ import {
 
 export interface CreateGameResult {
   joinCode: string;
+  playerId: string;
   players: string[];
 }
 
 export interface JoinGameResult {
+  playerId: string;
   players: string[];
+}
+
+export interface RejoinGameResult {
+  joinCode: string;
+  players: string[];
+  gameStarted: boolean;
+  gameFinished: boolean;
+  currentCard: number | null;
+  hasPlaced: boolean;
+  columns: number[][];
+  destinations: number[];
 }
 
 export interface MoveToDestinationResult {
@@ -61,6 +74,13 @@ export class GameHubClient {
 
   async joinGame(joinCode: string, playerName: string): Promise<JoinGameResult> {
     return await this.connection.invoke<JoinGameResult>("JoinGame", joinCode, playerName);
+  }
+
+  async rejoinGame(playerId: string): Promise<RejoinGameResult> {
+    return await this.connection.invoke<RejoinGameResult>(
+      "RejoinGame",
+      playerId,
+    );
   }
 
   async startGame(): Promise<void> {

@@ -21,6 +21,8 @@ public class Game
 
     public IReadOnlyCollection<string> PlayerIds => _players.Keys;
 
+    public IReadOnlySet<string> ReadyPlayers => _readyPlayers;
+
     public void AddPlayer(string playerId)
     {
         if (State != GameState.WaitingForPlayers)

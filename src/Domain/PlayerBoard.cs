@@ -90,6 +90,18 @@ public class PlayerBoard
         return _destinationPiles[pileIndex].Count;
     }
 
+    public IReadOnlyList<Card> GetColumnCards(int columnIndex)
+    {
+        ValidateColumnIndex(columnIndex);
+        return _columns[columnIndex].Reverse().ToList();
+    }
+
+    public IReadOnlyList<Card> GetDestinationPileCards(int pileIndex)
+    {
+        ValidateDestinationPileIndex(pileIndex);
+        return _destinationPiles[pileIndex].Reverse().ToList();
+    }
+
     private int? FindDestinationPileFor(Card card)
     {
         if (card.Value == Card.MinValue)

@@ -26,6 +26,12 @@ public class GameSessionStore
             .FirstOrDefault(s => s.GetHasPlayer(connectionId));
     }
 
+    public GameSession? GetSessionByPlayerId(string playerId)
+    {
+        return _sessions.Values
+            .FirstOrDefault(s => s.GetHasPlayerId(playerId));
+    }
+
     private static string GenerateJoinCode()
     {
         const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

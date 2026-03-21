@@ -52,10 +52,13 @@ onMounted(async () => {
 async function createGame() {
   try {
     const result = await hub.createGame(playerName.value);
+    sessionStorage.setItem(
+      "numchen_session",
+      JSON.stringify({ joinCode: result.joinCode, playerId: result.playerId }),
+    );
     router.push({
       name: "game",
       params: { joinCode: result.joinCode },
-      state: { players: result.players },
     });
   } catch (e: any) {
     error.value = e.message;
@@ -65,10 +68,13 @@ async function createGame() {
 async function joinGame() {
   try {
     const result = await hub.joinGame(joinCode.value, playerName.value);
+    sessionStorage.setItem(
+      "numchen_session",
+      JSON.stringify({ joinCode: joinCode.value, playerId: result.playerId }),
+    );
     router.push({
       name: "game",
       params: { joinCode: joinCode.value },
-      state: { players: result.players },
     });
   } catch (e: any) {
     error.value = e.message;
