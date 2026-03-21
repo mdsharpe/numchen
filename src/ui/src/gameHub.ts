@@ -23,6 +23,7 @@ export interface RejoinGameResult {
   gameFinished: boolean;
   currentCard: number | null;
   hasPlaced: boolean;
+  placementDeadline: number | null;
   columns: number[][];
   destinations: number[];
 }
@@ -34,7 +35,7 @@ export interface MoveToDestinationResult {
 export interface GameHubEvents {
   PlayerJoined: (playerName: string) => void;
   PlayerLeft: (playerName: string) => void;
-  CardDrawn: (cardValue: number) => void;
+  CardDrawn: (cardValue: number, deadline: number | null) => void;
   GameFinished: () => void;
 }
 

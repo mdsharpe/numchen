@@ -10,6 +10,8 @@ public class GameSession
     private readonly Dictionary<string, string> _connectionIdsByPlayerId = new();
     private readonly Dictionary<string, string> _playerNamesByPlayerId = new();
     private readonly Dictionary<string, CancellationTokenSource> _disconnectTimers = new();
+    private CancellationTokenSource? _placementTimerCts;
+    public DateTimeOffset? PlacementDeadline { get; private set; }
 
     public GameSession(string joinCode)
     {
@@ -122,5 +124,35 @@ public class GameSession
     public string? GetPlayerIdByConnectionId(string connectionId)
     {
         return _playerIdsByConnectionId.TryGetValue(connectionId, out var playerId) ? playerId : null;
+    }
+
+    public void StartPlacementTimer(Action<GameSession> onExpired, TimeSpan timeout)
+    {
+        CancelPlacementTimer();
+
+        PlacementDeadline = DateTimeOffset.UtcNow.Add(timeout);
+
+        var cts = new CancellationTokenSource();
+        _placementTimerCts = cts;
+
+        _ = Task.Delay(timeout, cts.Token).ContinueWith(t =>
+        {
+            if (!t.IsCanceled)
+            {
+                onExpired(this);
+            }
+        }, TaskScheduler.Default);
+    }
+
+    public void CancelPlacementTimer()
+    {
+        PlacementDeadline = null;
+
+        if (_placementTimerCts is not null)
+        {
+            _placementTimerCts.Cancel();
+            _placementTimerCts.Dispose();
+            _placementTimerCts = null;
+        }
     }
 }

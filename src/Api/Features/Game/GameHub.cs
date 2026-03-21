@@ -5,6 +5,7 @@ namespace Numchen.Api.Features.Game;
 public class GameHub : Hub
 {
     private static readonly TimeSpan DisconnectGracePeriod = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan PlacementTimeout = TimeSpan.FromSeconds(30);
 
     private readonly GameSessionStore _store;
     private readonly IHubContext<GameHub> _hubContext;
@@ -48,6 +49,22 @@ public class GameHub : Hub
         var clients = _hubContext.Clients.Group(session.Id);
         clients.SendAsync("PlayerLeft", playerName).GetAwaiter().GetResult();
 
+        BroadcastGameStateAdvance(session, clients).GetAwaiter().GetResult();
+    }
+
+    private void OnPlacementTimerExpired(GameSession session)
+    {
+        lock (session.Lock)
+        {
+            if (session.Game.State != Domain.GameState.PlacingCard)
+            {
+                return;
+            }
+
+            session.Game.AutoPlaceForUnreadyPlayers();
+        }
+
+        var clients = _hubContext.Clients.Group(session.Id);
         BroadcastGameStateAdvance(session, clients).GetAwaiter().GetResult();
     }
 
@@ -117,6 +134,7 @@ public class GameHub : Hub
             GameFinished = session.Game.State == Domain.GameState.Finished,
             CurrentCard = session.Game.CurrentCard?.Value,
             HasPlaced = session.GetHasPlayerPlaced(playerId),
+            PlacementDeadline = session.PlacementDeadline?.ToUnixTimeMilliseconds(),
             Columns = columns,
             Destinations = destinations
         };
@@ -131,9 +149,10 @@ public class GameHub : Hub
         {
             session.Game.Start();
             card = session.Game.DrawCard();
+            session.StartPlacementTimer(OnPlacementTimerExpired, PlacementTimeout);
         }
 
-        await Clients.Group(session.Id).SendAsync("CardDrawn", card.Value);
+        await Clients.Group(session.Id).SendAsync("CardDrawn", card.Value, session.PlacementDeadline?.ToUnixTimeMilliseconds());
     }
 
     public async Task PlaceCard(int columnIndex)
@@ -161,7 +180,7 @@ public class GameHub : Hub
         }
     }
 
-    private static async Task BroadcastGameStateAdvance(GameSession session, IClientProxy clients)
+    private async Task BroadcastGameStateAdvance(GameSession session, IClientProxy clients)
     {
         Domain.Card? nextCard = null;
         bool finished = false;
@@ -171,16 +190,18 @@ public class GameHub : Hub
             if (session.Game.State == Domain.GameState.ReadyToDraw)
             {
                 nextCard = session.Game.DrawCard();
+                session.StartPlacementTimer(OnPlacementTimerExpired, PlacementTimeout);
             }
             else if (session.Game.State == Domain.GameState.Finished)
             {
+                session.CancelPlacementTimer();
                 finished = true;
             }
         }
 
         if (nextCard is not null)
         {
-            await clients.SendAsync("CardDrawn", nextCard.Value.Value);
+            await clients.SendAsync("CardDrawn", nextCard.Value.Value, session.PlacementDeadline?.ToUnixTimeMilliseconds());
         }
         else if (finished)
         {

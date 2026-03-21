@@ -102,6 +102,40 @@ public class Game
         }
     }
 
+    public void AutoPlaceForUnreadyPlayers()
+    {
+        if (State != GameState.PlacingCard)
+        {
+            throw new InvalidOperationException("No card to place.");
+        }
+
+        var unreadyPlayers = _players.Keys.Where(id => !_readyPlayers.Contains(id)).ToList();
+        foreach (var playerId in unreadyPlayers)
+        {
+            var board = _players[playerId];
+            var columnIndex = GetColumnWithFewestCards(board);
+            PlaceCard(playerId, columnIndex);
+        }
+    }
+
+    private static int GetColumnWithFewestCards(PlayerBoard board)
+    {
+        var bestIndex = 0;
+        var bestCount = board.GetColumnCardCount(0);
+
+        for (var i = 1; i < PlayerBoard.ColumnCount; i++)
+        {
+            var count = board.GetColumnCardCount(i);
+            if (count < bestCount)
+            {
+                bestIndex = i;
+                bestCount = count;
+            }
+        }
+
+        return bestIndex;
+    }
+
     public void RemovePlayer(string playerId)
     {
         if (!_players.Remove(playerId))

@@ -15,9 +15,13 @@
       <div v-if="currentCard !== null && !hasPlaced" class="current-card">
         <div class="card drawn">{{ currentCard }}</div>
         <div class="label">Place this card</div>
+        <div v-if="countdown !== null" class="countdown" :class="{ urgent: countdown <= 5 }">
+          {{ countdown }}s
+        </div>
       </div>
       <div v-else-if="hasPlaced" class="current-card">
         <div class="label">Waiting for other players...</div>
+        <div v-if="countdown !== null" class="countdown">{{ countdown }}s</div>
       </div>
 
       <div class="columns">
@@ -81,6 +85,34 @@ const destinations = ref<number[]>([0, 0, 0, 0, 0, 0]);
 const autoPlay = ref(false);
 const autoPlayDelay = 400;
 const isProcessing = ref(false);
+const countdown = ref<number | null>(null);
+let countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+function startCountdown(deadline: number | null) {
+  stopCountdown();
+  if (deadline === null) {
+    return;
+  }
+
+  const update = () => {
+    const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    countdown.value = remaining;
+    if (remaining <= 0) {
+      stopCountdown();
+    }
+  };
+
+  update();
+  countdownInterval = setInterval(update, 250);
+}
+
+function stopCountdown() {
+  countdown.value = null;
+  if (countdownInterval !== null) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+}
 
 function onPlayerJoined(playerName: string) {
   players.value.push(playerName);
@@ -90,10 +122,11 @@ function onPlayerLeft(playerName: string) {
   players.value = players.value.filter((p) => p !== playerName);
 }
 
-function onCardDrawn(cardValue: number) {
+function onCardDrawn(cardValue: number, deadline: number | null) {
   gameStarted.value = true;
   currentCard.value = cardValue;
   hasPlaced.value = false;
+  startCountdown(deadline);
 
   if (autoPlay.value) {
     scheduleAutoPlay();
@@ -103,6 +136,7 @@ function onCardDrawn(cardValue: number) {
 function onGameFinished() {
   gameFinished.value = true;
   currentCard.value = null;
+  stopCountdown();
   sessionStorage.removeItem("numchen_session");
 }
 
@@ -138,6 +172,7 @@ async function tryRejoin(): Promise<boolean> {
     hasPlaced.value = result.hasPlaced;
     columns.value = result.columns;
     destinations.value = result.destinations;
+    startCountdown(result.placementDeadline);
     return true;
   } catch {
     sessionStorage.removeItem("numchen_session");
@@ -162,6 +197,7 @@ onUnmounted(() => {
   hub.off("PlayerLeft", onPlayerLeft);
   hub.off("CardDrawn", onCardDrawn);
   hub.off("GameFinished", onGameFinished);
+  stopCountdown();
 });
 
 function canMoveToDestination(cardValue: number): boolean {
@@ -428,6 +464,17 @@ async function onTopCardClick(index: number) {
   font-size: 0.875rem;
   color: #666;
   margin-top: 0.5rem;
+}
+
+.countdown {
+  font-size: 0.875rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.countdown.urgent {
+  color: #d32f2f;
+  font-weight: bold;
 }
 
 button.active {
