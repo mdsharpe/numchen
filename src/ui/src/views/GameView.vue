@@ -31,7 +31,7 @@
               :class="{
                 'top-card': cardIndex === column.length - 1,
               }"
-              @click="cardIndex === column.length - 1 && onTopCardClick(index)"
+              @click="cardIndex === column.length - 1 && !isProcessing && onTopCardClick(index)"
             >
               {{ card }}
             </div>
@@ -39,6 +39,7 @@
           <div
             v-if="currentCard !== null && !hasPlaced"
             class="drop-zone"
+            :class="{ disabled: isProcessing }"
             @click="onPlaceCard(index)"
           >
             Place here
@@ -79,6 +80,7 @@ const columns = ref<number[][]>([[], [], [], [], [], []]);
 const destinations = ref<number[]>([0, 0, 0, 0, 0, 0]);
 const autoPlay = ref(false);
 const autoPlayDelay = 400;
+const isProcessing = ref(false);
 
 function onPlayerJoined(playerName: string) {
   players.value.push(playerName);
@@ -97,6 +99,7 @@ function onCardDrawn(cardValue: number) {
 function onGameFinished() {
   gameFinished.value = true;
   currentCard.value = null;
+  sessionStorage.removeItem("numchen_session");
 }
 
 function getSavedSession(): { joinCode: string; playerId: string } | null {
@@ -270,29 +273,37 @@ async function startGame() {
 }
 
 async function onPlaceCard(index: number) {
-  if (currentCard.value === null || hasPlaced.value) {
+  if (currentCard.value === null || hasPlaced.value || isProcessing.value) {
     return;
   }
 
-  const card = currentCard.value;
-  columns.value[index]!.push(card);
-  hasPlaced.value = true;
-  currentCard.value = null;
-  await hub.placeCard(index);
+  isProcessing.value = true;
+  try {
+    const card = currentCard.value;
+    columns.value[index]!.push(card);
+    hasPlaced.value = true;
+    currentCard.value = null;
+    await hub.placeCard(index);
+  } finally {
+    isProcessing.value = false;
+  }
 }
 
 async function onTopCardClick(index: number) {
   const column = columns.value[index]!;
-  if (column.length === 0) {
+  if (column.length === 0 || isProcessing.value) {
     return;
   }
 
+  isProcessing.value = true;
   try {
     const { pileIndex } = await hub.moveToDestination(index);
     const card = column.pop()!;
     destinations.value[pileIndex] = card;
   } catch {
     // Move wasn't valid, ignore
+  } finally {
+    isProcessing.value = false;
   }
 }
 </script>
@@ -388,8 +399,13 @@ async function onTopCardClick(index: number) {
   background: #e3f2fd;
 }
 
-.drop-zone:hover {
+.drop-zone:hover:not(.disabled) {
   background: #bbdefb;
+}
+
+.drop-zone.disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 
 .destinations {
