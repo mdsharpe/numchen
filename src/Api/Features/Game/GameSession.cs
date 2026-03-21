@@ -9,6 +9,7 @@ public class GameSession
     private readonly Dictionary<string, string> _playerIdsByConnectionId = new();
     private readonly Dictionary<string, string> _connectionIdsByPlayerId = new();
     private readonly Dictionary<string, string> _playerNamesByPlayerId = new();
+    private readonly Dictionary<string, CancellationTokenSource> _disconnectTimers = new();
 
     public GameSession(string joinCode)
     {
@@ -32,6 +33,8 @@ public class GameSession
         {
             throw new InvalidOperationException("Player not found in this game.");
         }
+
+        CancelDisconnectTimer(playerId);
 
         var oldConnectionId = _connectionIdsByPlayerId[playerId];
         _playerIdsByConnectionId.Remove(oldConnectionId);
@@ -74,5 +77,50 @@ public class GameSession
         }
 
         return Game.ReadyPlayers.Contains(playerId);
+    }
+
+    public void StartDisconnectTimer(string playerId, Action<string, GameSession> onExpired, TimeSpan gracePeriod)
+    {
+        CancelDisconnectTimer(playerId);
+
+        var cts = new CancellationTokenSource();
+        _disconnectTimers[playerId] = cts;
+
+        _ = Task.Delay(gracePeriod, cts.Token).ContinueWith(t =>
+        {
+            if (!t.IsCanceled)
+            {
+                onExpired(playerId, this);
+            }
+        }, TaskScheduler.Default);
+    }
+
+    public void CancelDisconnectTimer(string playerId)
+    {
+        if (_disconnectTimers.Remove(playerId, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+    }
+
+    public string RemovePlayer(string playerId)
+    {
+        var playerName = _playerNamesByPlayerId[playerId];
+        var connectionId = _connectionIdsByPlayerId[playerId];
+
+        _playerIdsByConnectionId.Remove(connectionId);
+        _connectionIdsByPlayerId.Remove(playerId);
+        _playerNamesByPlayerId.Remove(playerId);
+        _disconnectTimers.Remove(playerId);
+
+        Game.RemovePlayer(playerId);
+
+        return playerName;
+    }
+
+    public string? GetPlayerIdByConnectionId(string connectionId)
+    {
+        return _playerIdsByConnectionId.TryGetValue(connectionId, out var playerId) ? playerId : null;
     }
 }

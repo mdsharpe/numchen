@@ -86,6 +86,10 @@ function onPlayerJoined(playerName: string) {
   players.value.push(playerName);
 }
 
+function onPlayerLeft(playerName: string) {
+  players.value = players.value.filter((p) => p !== playerName);
+}
+
 function onCardDrawn(cardValue: number) {
   gameStarted.value = true;
   currentCard.value = cardValue;
@@ -143,6 +147,7 @@ async function tryRejoin(): Promise<boolean> {
 
 onMounted(async () => {
   hub.on("PlayerJoined", onPlayerJoined);
+  hub.on("PlayerLeft", onPlayerLeft);
   hub.on("CardDrawn", onCardDrawn);
   hub.on("GameFinished", onGameFinished);
 
@@ -154,6 +159,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   hub.off("PlayerJoined", onPlayerJoined);
+  hub.off("PlayerLeft", onPlayerLeft);
   hub.off("CardDrawn", onCardDrawn);
   hub.off("GameFinished", onGameFinished);
 });

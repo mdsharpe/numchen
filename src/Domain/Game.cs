@@ -102,6 +102,37 @@ public class Game
         }
     }
 
+    public void RemovePlayer(string playerId)
+    {
+        if (!_players.Remove(playerId))
+        {
+            throw new InvalidOperationException($"Player '{playerId}' is not in the game.");
+        }
+
+        _readyPlayers.Remove(playerId);
+
+        if (_players.Count == 0)
+        {
+            State = GameState.Finished;
+            _currentCard = null;
+            return;
+        }
+
+        if (State == GameState.PlacingCard && _readyPlayers.Count == _players.Count)
+        {
+            if (_deck.IsEmpty)
+            {
+                State = GameState.Finished;
+            }
+            else
+            {
+                State = GameState.ReadyToDraw;
+            }
+
+            _currentCard = null;
+        }
+    }
+
     public int MoveToDestination(string playerId, int columnIndex)
     {
         if (!_players.TryGetValue(playerId, out var board))

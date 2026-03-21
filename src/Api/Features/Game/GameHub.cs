@@ -4,11 +4,51 @@ namespace Numchen.Api.Features.Game;
 
 public class GameHub : Hub
 {
-    private readonly GameSessionStore _store;
+    private static readonly TimeSpan DisconnectGracePeriod = TimeSpan.FromSeconds(30);
 
-    public GameHub(GameSessionStore store)
+    private readonly GameSessionStore _store;
+    private readonly IHubContext<GameHub> _hubContext;
+
+    public GameHub(GameSessionStore store, IHubContext<GameHub> hubContext)
     {
         _store = store;
+        _hubContext = hubContext;
+    }
+
+    public override Task OnDisconnectedAsync(Exception? exception)
+    {
+        var session = _store.GetSessionByConnectionId(Context.ConnectionId);
+        var playerId = session?.GetPlayerIdByConnectionId(Context.ConnectionId);
+
+        if (session is not null && playerId is not null)
+        {
+            lock (session.Lock)
+            {
+                session.StartDisconnectTimer(playerId, OnDisconnectTimerExpired, DisconnectGracePeriod);
+            }
+        }
+
+        return base.OnDisconnectedAsync(exception);
+    }
+
+    private void OnDisconnectTimerExpired(string playerId, GameSession session)
+    {
+        string playerName;
+
+        lock (session.Lock)
+        {
+            if (!session.GetHasPlayerId(playerId))
+            {
+                return;
+            }
+
+            playerName = session.RemovePlayer(playerId);
+        }
+
+        var clients = _hubContext.Clients.Group(session.Id);
+        clients.SendAsync("PlayerLeft", playerName).GetAwaiter().GetResult();
+
+        BroadcastGameStateAdvance(session, clients).GetAwaiter().GetResult();
     }
 
     public async Task<object> CreateGame(string playerName)
@@ -101,13 +141,33 @@ public class GameHub : Hub
         var session = GetSessionForCurrentConnection();
         var playerId = session.GetPlayerId(Context.ConnectionId);
 
+        lock (session.Lock)
+        {
+            session.Game.PlaceCard(playerId, columnIndex);
+        }
+
+        await BroadcastGameStateAdvance(session, Clients.Group(session.Id));
+    }
+
+    public object MoveToDestination(int columnIndex)
+    {
+        var session = GetSessionForCurrentConnection();
+        var playerId = session.GetPlayerId(Context.ConnectionId);
+
+        lock (session.Lock)
+        {
+            var pileIndex = session.Game.MoveToDestination(playerId, columnIndex);
+            return new { PileIndex = pileIndex };
+        }
+    }
+
+    private static async Task BroadcastGameStateAdvance(GameSession session, IClientProxy clients)
+    {
         Domain.Card? nextCard = null;
         bool finished = false;
 
         lock (session.Lock)
         {
-            session.Game.PlaceCard(playerId, columnIndex);
-
             if (session.Game.State == Domain.GameState.ReadyToDraw)
             {
                 nextCard = session.Game.DrawCard();
@@ -120,23 +180,11 @@ public class GameHub : Hub
 
         if (nextCard is not null)
         {
-            await Clients.Group(session.Id).SendAsync("CardDrawn", nextCard.Value.Value);
+            await clients.SendAsync("CardDrawn", nextCard.Value.Value);
         }
         else if (finished)
         {
-            await Clients.Group(session.Id).SendAsync("GameFinished");
-        }
-    }
-
-    public object MoveToDestination(int columnIndex)
-    {
-        var session = GetSessionForCurrentConnection();
-        var playerId = session.GetPlayerId(Context.ConnectionId);
-
-        lock (session.Lock)
-        {
-            var pileIndex = session.Game.MoveToDestination(playerId, columnIndex);
-            return new { PileIndex = pileIndex };
+            await clients.SendAsync("GameFinished");
         }
     }
 
