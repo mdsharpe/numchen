@@ -30,60 +30,70 @@
     </div>
 
     <div v-if="gameStarted" class="board">
-      <div v-if="currentCard !== null && !hasPlaced" class="draw-area">
-        <div class="drawn-card">{{ currentCard }}</div>
-        <div class="draw-label">Place this card</div>
-        <div v-if="countdown !== null" class="timer-bar-container">
-          <div
-            class="timer-bar"
-            :class="{ urgent: countdown <= 5 }"
-            :style="{ width: timerPercent + '%' }"
-          ></div>
-        </div>
-      </div>
-      <div v-else-if="hasPlaced" class="draw-area waiting">
-        <div class="draw-label">Waiting for other players...</div>
-        <div v-if="countdown !== null" class="timer-bar-container">
-          <div
-            class="timer-bar"
-            :style="{ width: timerPercent + '%' }"
-          ></div>
-        </div>
-      </div>
-
-      <div class="columns">
-        <div v-for="(column, index) in columns" :key="index" class="column">
-          <div class="column-label">{{ index + 1 }}</div>
-          <div class="card-stack">
+      <div class="board-main">
+        <div v-if="currentCard !== null && !hasPlaced" class="draw-area">
+          <div class="drawn-card">{{ currentCard }}</div>
+          <div class="draw-label">Place this card</div>
+          <div v-if="countdown !== null" class="timer-bar-container">
             <div
-              v-for="(card, cardIndex) in column"
-              :key="cardIndex"
-              class="card"
-              :class="{
-                'top-card': cardIndex === column.length - 1 && !isProcessing && canMoveToDestination(card),
-              }"
-              @click="cardIndex === column.length - 1 && !isProcessing && onTopCardClick(index)"
+              class="timer-bar"
+              :class="{ urgent: countdown <= 5 }"
+              :style="{ width: timerPercent + '%' }"
+            ></div>
+          </div>
+        </div>
+        <div v-else-if="hasPlaced" class="draw-area waiting">
+          <div class="draw-label">Waiting for other players...</div>
+          <div v-if="countdown !== null" class="timer-bar-container">
+            <div
+              class="timer-bar"
+              :style="{ width: timerPercent + '%' }"
+            ></div>
+          </div>
+        </div>
+
+        <div class="columns">
+          <div v-for="(column, index) in columns" :key="index" class="column">
+            <div class="column-label">{{ index + 1 }}</div>
+            <div
+              class="card-stack"
+              :style="{ height: getStackHeight(column.length) + 'px' }"
             >
-              {{ card }}
+              <div
+                v-for="(card, cardIndex) in column"
+                :key="cardIndex"
+                class="card"
+                :class="{
+                  'top-card': cardIndex === column.length - 1 && !isProcessing && canMoveToDestination(card),
+                }"
+                :style="{ top: cardIndex * getCardOffset(column.length) + 'px', zIndex: cardIndex }"
+                @click="cardIndex === column.length - 1 && !isProcessing && onTopCardClick(index)"
+              >
+                <span class="card-pip top-left">{{ card }}</span>
+                <span class="card-value">{{ card }}</span>
+                <span class="card-pip bottom-right">{{ card }}</span>
+              </div>
+            </div>
+            <div
+              v-if="currentCard !== null && !hasPlaced"
+              class="drop-zone"
+              :class="{ disabled: isProcessing }"
+              @click="onPlaceCard(index)"
+            >
+              &#9660;
             </div>
           </div>
-          <div
-            v-if="currentCard !== null && !hasPlaced"
-            class="drop-zone"
-            :class="{ disabled: isProcessing }"
-            @click="onPlaceCard(index)"
-          >
-            &#9660;
-          </div>
         </div>
       </div>
 
-      <div class="destinations">
-        <div class="destinations-label">Destination Piles</div>
-        <div class="piles">
-          <div v-for="(pile, index) in destinations" :key="index" class="pile">
-            <div class="dest-card" :class="{ empty: pile === 0 }">
-              {{ pile > 0 ? pile : "" }}
+      <div class="sidebar">
+        <div class="destinations">
+          <div class="destinations-label">Destinations</div>
+          <div class="piles">
+            <div v-for="(pile, index) in destinations" :key="index" class="pile">
+              <div class="dest-card" :class="{ empty: pile === 0 }">
+                {{ pile > 0 ? pile : "" }}
+              </div>
             </div>
           </div>
         </div>
@@ -250,6 +260,26 @@ onUnmounted(() => {
   stopCountdown();
 });
 
+const CARD_HEIGHT = 40;
+const MAX_STACK_HEIGHT = 280;
+const MAX_CARD_OFFSET = 18;
+const MIN_CARD_OFFSET = 6;
+
+function getCardOffset(cardCount: number): number {
+  if (cardCount <= 1) {
+    return 0;
+  }
+  const offset = (MAX_STACK_HEIGHT - CARD_HEIGHT) / (cardCount - 1);
+  return Math.max(MIN_CARD_OFFSET, Math.min(MAX_CARD_OFFSET, offset));
+}
+
+function getStackHeight(cardCount: number): number {
+  if (cardCount === 0) {
+    return 44;
+  }
+  return (cardCount - 1) * getCardOffset(cardCount) + CARD_HEIGHT;
+}
+
 function canMoveToDestination(cardValue: number): boolean {
   if (cardValue === 1) {
     return destinations.value.some((d) => d === 0);
@@ -412,9 +442,9 @@ async function onTopCardClick(index: number) {
 
 <style scoped>
 .game {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem;
 }
 
 /* Header */
@@ -442,24 +472,24 @@ async function onTopCardClick(index: number) {
   background: var(--color-background-mute);
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  padding: 0.2rem 0.6rem;
+  padding: 0.3rem 0.7rem;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 1rem;
   letter-spacing: 0.1em;
 }
 
 .player-list {
-  font-size: 0.85rem;
+  font-size: 1rem;
   opacity: 0.7;
 }
 
 .btn {
-  padding: 0.45rem 1rem;
+  padding: 0.5rem 1.2rem;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-background);
   color: var(--color-text);
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -493,15 +523,29 @@ async function onTopCardClick(index: number) {
 /* Board */
 .board {
   display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.board-main {
+  flex: 1;
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2rem;
 }
 
+/* Sidebar */
+.sidebar {
+  flex-shrink: 0;
+  width: 80px;
+  padding-top: 0.5rem;
+}
+
 /* Draw area */
 .draw-area {
   text-align: center;
-  height: 130px;
+  height: 150px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -510,12 +554,12 @@ async function onTopCardClick(index: number) {
 }
 
 .drawn-card {
-  width: 64px;
-  height: 88px;
+  width: 72px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
   border: 2px solid #2563eb;
   border-radius: 10px;
@@ -525,14 +569,14 @@ async function onTopCardClick(index: number) {
 }
 
 .draw-label {
-  font-size: 0.8rem;
+  font-size: 1rem;
   opacity: 0.6;
   font-weight: 500;
 }
 
 .timer-bar-container {
-  width: 120px;
-  height: 4px;
+  width: 140px;
+  height: 5px;
   background: var(--color-background-mute);
   border-radius: 2px;
   overflow: hidden;
@@ -552,42 +596,65 @@ async function onTopCardClick(index: number) {
 /* Columns */
 .columns {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .column {
   text-align: center;
-  min-width: 56px;
+  min-width: 64px;
 }
 
 .column-label {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   font-weight: 600;
   opacity: 0.4;
   text-transform: uppercase;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
 }
 
 .card-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-height: 40px;
+  position: relative;
+  min-height: 44px;
 }
 
 .card {
-  width: 52px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  left: 0;
+  width: 60px;
+  height: 40px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 700;
   background: var(--color-background);
   color: var(--color-text);
   user-select: none;
+}
+
+.card-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.card-pip {
+  position: absolute;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.card-pip.top-left {
+  top: 2px;
+  left: 4px;
+}
+
+.card-pip.bottom-right {
+  bottom: 2px;
+  right: 4px;
+  transform: rotate(180deg);
 }
 
 .card.top-card {
@@ -599,22 +666,22 @@ async function onTopCardClick(index: number) {
 }
 
 .card.top-card:hover {
-  background: rgba(22, 163, 74, 0.08);
+  background: var(--color-accent-green-hover);
   box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
 }
 
 .drop-zone {
   cursor: pointer;
   margin-top: 4px;
-  width: 52px;
-  height: 28px;
+  width: 60px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px dashed #2563eb;
   border-radius: 6px;
   color: #2563eb;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   background: transparent;
   transition: all 0.15s;
   opacity: 0.5;
@@ -636,27 +703,28 @@ async function onTopCardClick(index: number) {
 }
 
 .destinations-label {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   opacity: 0.4;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .piles {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
 }
 
 .dest-card {
-  width: 52px;
-  height: 36px;
+  width: 60px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: 700;
   background: var(--color-background-soft);
   color: var(--color-text);
@@ -674,20 +742,20 @@ async function onTopCardClick(index: number) {
 }
 
 .finished-icon {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  font-size: 2rem;
   background: #16a34a;
   color: white;
   border-radius: 50%;
 }
 
 .finished-text {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
 }
 </style>

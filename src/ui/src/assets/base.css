@@ -32,6 +32,7 @@
 
   --color-heading: var(--vt-c-text-light-1);
   --color-text: var(--vt-c-text-light-1);
+  --color-accent-green-hover: #f0fdf4;
 
   --section-gap: 160px;
 }
@@ -47,6 +48,7 @@
 
     --color-heading: var(--vt-c-text-dark-1);
     --color-text: var(--vt-c-text-dark-2);
+    --color-accent-green-hover: #052e16;
   }
 }
 

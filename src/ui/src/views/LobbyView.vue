@@ -128,7 +128,7 @@ async function joinGame() {
 
 .field label {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -197,7 +197,7 @@ async function joinGame() {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   opacity: 0.5;
 }
 
