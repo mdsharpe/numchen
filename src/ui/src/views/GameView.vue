@@ -62,15 +62,13 @@
     </div>
 
     <div class="tableau">
-      <div v-for="(column, index) in columns" :key="index" class="column">
-        <div
-          v-if="currentCard !== null && !hasPlaced"
-          class="drop-zone"
-          :class="{ disabled: isProcessing }"
-          @click="onPlaceCard(index)"
-        >
-          &#9660;
-        </div>
+      <div
+        v-for="(column, index) in columns"
+        :key="index"
+        class="column"
+        :class="{ 'drop-target': currentCard !== null && !hasPlaced && !isProcessing }"
+        @click="onPlaceCard(index)"
+      >
         <div class="card-stack">
           <div v-if="column.length === 0" class="card empty-placeholder"></div>
           <div
@@ -81,7 +79,7 @@
               'top-card': cardIndex === column.length - 1 && !isProcessing && canMoveToDestination(card),
             }"
             :style="{ top: cardIndex * getCardOffset(column.length) + 'px', zIndex: cardIndex }"
-            @click="cardIndex === column.length - 1 && !isProcessing && onTopCardClick(index)"
+            @click="onCardClick($event, index, cardIndex)"
           >
             <span class="card-pip top-left">{{ card }}</span>
             <span class="card-value">{{ card }}</span>
@@ -412,6 +410,17 @@ async function onPlaceCard(index: number) {
   }
 }
 
+function onCardClick(event: Event, columnIndex: number, cardIndex: number) {
+  const column = columns.value[columnIndex]!;
+  const isTopCard = cardIndex === column.length - 1;
+  const topCard = isTopCard ? column[cardIndex]! : null;
+
+  if (isTopCard && topCard !== null && !isProcessing.value && canMoveToDestination(topCard)) {
+    event.stopPropagation();
+    onTopCardClick(columnIndex);
+  }
+}
+
 async function onTopCardClick(index: number) {
   const column = columns.value[index]!;
   if (column.length === 0 || isProcessing.value) {
@@ -666,31 +675,12 @@ async function onTopCardClick(index: number) {
   box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
 }
 
-.drop-zone {
+.column.drop-target {
   cursor: pointer;
-  margin: 0 auto 4px;
-  width: var(--card-width);
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed #2563eb;
-  border-radius: var(--card-radius);
-  color: #2563eb;
-  font-size: 0.85rem;
-  background: transparent;
-  transition: all 0.15s;
-  opacity: 0.5;
 }
 
-.drop-zone:hover:not(.disabled) {
-  opacity: 1;
+.column.drop-target:hover:not(:has(.top-card:hover)) {
   background: rgba(37, 99, 235, 0.06);
-}
-
-.drop-zone.disabled {
-  cursor: default;
-  opacity: 0.25;
 }
 
 /* Destinations */
@@ -700,14 +690,14 @@ async function onTopCardClick(index: number) {
 }
 
 .dest-card {
-  width: 60px;
-  height: 40px;
+  width: var(--card-width);
+  height: var(--card-height);
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 1.1rem;
+  border-radius: var(--card-radius);
+  font-size: 1.5rem;
   font-weight: 700;
   background: var(--color-background-soft);
   color: var(--color-text);
@@ -719,10 +709,24 @@ async function onTopCardClick(index: number) {
   background: var(--color-background-mute);
 }
 
-/* Finished */
-.finished {
+/* Finished overlay */
+.finished-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.finished-panel {
   text-align: center;
-  margin: 1.5rem 0;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 2.5rem 3.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .finished-icon {
