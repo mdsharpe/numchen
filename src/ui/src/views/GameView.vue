@@ -1,5 +1,5 @@
 <template>
-  <div class="game">
+  <div class="game" :class="{ 'dragging-drawn': drag?.type === 'drawn' && drag.isDragging, 'dragging-column': drag?.type === 'column' && drag.isDragging }">
     <div class="header">
       <div class="header-left">
         <span class="join-code">{{ joinCode }}</span>
@@ -27,7 +27,11 @@
     <div class="top-row">
       <div class="draw-area">
         <div v-if="currentCard !== null && !hasPlaced" class="draw-pile">
-          <div class="drawn-card">{{ currentCard }}</div>
+          <div
+            class="drawn-card"
+            :class="{ 'drag-source': drag?.type === 'drawn' && drag.isDragging }"
+            @pointerdown="onDrawnPointerDown"
+          >{{ currentCard }}</div>
           <div class="draw-label">Place this card</div>
           <div v-if="countdown !== null" class="timer-bar-container">
             <div
@@ -52,9 +56,9 @@
         </div>
       </div>
 
-      <div class="piles">
-        <div v-for="(pile, index) in destinations" :key="index" class="pile">
-          <div class="dest-card" :class="{ empty: pile === 0 }">
+      <div class="piles" data-drop="destinations">
+        <div v-for="(pile, index) in destinations" :key="index" class="pile" data-drop="destinations">
+          <div class="dest-card" :class="{ empty: pile === 0 }" data-drop="destinations">
             {{ pile > 0 ? pile : "" }}
           </div>
         </div>
@@ -67,6 +71,7 @@
         :key="index"
         class="column"
         :class="{ 'drop-target': currentCard !== null && !hasPlaced && !isProcessing }"
+        :data-column-index="index"
         @click="onPlaceCard(index)"
       >
         <div class="card-stack">
@@ -77,9 +82,12 @@
             class="card"
             :class="{
               'top-card': cardIndex === column.length - 1 && !isProcessing && canMoveToDestination(card),
+              'drag-source': drag?.type === 'column' && drag.columnIndex === index && drag.isDragging && cardIndex === column.length - 1,
             }"
             :style="{ top: cardIndex * getCardOffset(column.length) + 'px', zIndex: cardIndex }"
+            :data-column-index="index"
             @click="onCardClick($event, index, cardIndex)"
+            @pointerdown="cardIndex === column.length - 1 && canMoveToDestination(card) && onColumnCardPointerDown($event, index, card)"
           >
             <span class="card-pip top-left">{{ card }}</span>
             <span class="card-value">{{ card }}</span>
@@ -87,6 +95,16 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div
+      v-if="drag && drag.isDragging"
+      class="drag-card"
+      :style="{ left: drag.x + 'px', top: drag.y + 'px' }"
+    >
+      <span class="card-pip top-left">{{ drag.cardValue }}</span>
+      <span class="card-value">{{ drag.cardValue }}</span>
+      <span class="card-pip bottom-right">{{ drag.cardValue }}</span>
     </div>
 
     <div v-if="gameFinished" class="finished-overlay">
@@ -254,7 +272,115 @@ onUnmounted(() => {
   hub.off("CardDrawn", onCardDrawn);
   hub.off("GameFinished", onGameFinished);
   stopCountdown();
+  document.removeEventListener("pointermove", onPointerMove);
+  document.removeEventListener("pointerup", onPointerUp);
 });
+
+// Drag and drop
+interface DragState {
+  type: "drawn" | "column";
+  columnIndex: number;
+  cardValue: number;
+  startX: number;
+  startY: number;
+  x: number;
+  y: number;
+  isDragging: boolean;
+}
+
+const drag = ref<DragState | null>(null);
+const DRAG_THRESHOLD = 5;
+
+function onDrawnPointerDown(e: PointerEvent) {
+  if (currentCard.value === null || hasPlaced.value || isProcessing.value) {
+    return;
+  }
+  startDrag(e, "drawn", -1, currentCard.value);
+}
+
+function onColumnCardPointerDown(e: PointerEvent, columnIndex: number, cardValue: number) {
+  if (isProcessing.value) {
+    return;
+  }
+  startDrag(e, "column", columnIndex, cardValue);
+}
+
+function startDrag(e: PointerEvent, type: "drawn" | "column", columnIndex: number, cardValue: number) {
+  e.preventDefault();
+  drag.value = {
+    type,
+    columnIndex,
+    cardValue,
+    startX: e.clientX,
+    startY: e.clientY,
+    x: e.clientX,
+    y: e.clientY,
+    isDragging: false,
+  };
+  document.addEventListener("pointermove", onPointerMove);
+  document.addEventListener("pointerup", onPointerUp);
+}
+
+function onPointerMove(e: PointerEvent) {
+  if (!drag.value) {
+    return;
+  }
+  const dx = e.clientX - drag.value.startX;
+  const dy = e.clientY - drag.value.startY;
+  if (!drag.value.isDragging && Math.sqrt(dx * dx + dy * dy) >= DRAG_THRESHOLD) {
+    drag.value.isDragging = true;
+  }
+  if (drag.value.isDragging) {
+    drag.value.x = e.clientX;
+    drag.value.y = e.clientY;
+  }
+}
+
+function onPointerUp(e: PointerEvent) {
+  document.removeEventListener("pointermove", onPointerMove);
+  document.removeEventListener("pointerup", onPointerUp);
+
+  if (!drag.value) {
+    return;
+  }
+
+  const wasDragging = drag.value.isDragging;
+  const dragState = drag.value;
+  drag.value = null;
+
+  if (wasDragging) {
+    suppressNextClick = true;
+  }
+
+  if (!wasDragging) {
+    // Treat as click
+    if (dragState.type === "drawn") {
+      // No-op: let the column click handle placement
+    } else if (dragState.type === "column") {
+      onTopCardClick(dragState.columnIndex);
+    }
+    return;
+  }
+
+  // Find drop target
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  if (!el) {
+    return;
+  }
+
+  if (dragState.type === "drawn") {
+    const columnEl = (el as HTMLElement).closest("[data-column-index]");
+    if (columnEl) {
+      const colIndex = parseInt(columnEl.getAttribute("data-column-index")!);
+      onPlaceCard(colIndex);
+    }
+  } else if (dragState.type === "column") {
+    const destEl = (el as HTMLElement).closest("[data-drop='destinations']");
+    if (destEl) {
+      onTopCardClick(dragState.columnIndex);
+    }
+  }
+}
 
 const CARD_HEIGHT = 40;
 const MAX_STACK_HEIGHT = 280;
@@ -410,7 +536,15 @@ async function onPlaceCard(index: number) {
   }
 }
 
+let suppressNextClick = false;
+
 function onCardClick(event: Event, columnIndex: number, cardIndex: number) {
+  if (suppressNextClick) {
+    suppressNextClick = false;
+    event.stopPropagation();
+    return;
+  }
+
   const column = columns.value[columnIndex]!;
   const isTopCard = cardIndex === column.length - 1;
   const topCard = isTopCard ? column[cardIndex]! : null;
@@ -559,6 +693,8 @@ async function onTopCardClick(index: number) {
   background: var(--color-background);
   color: #2563eb;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  touch-action: none;
+  cursor: grab;
 }
 
 .drawn-card.placeholder {
@@ -663,7 +799,8 @@ async function onTopCardClick(index: number) {
 }
 
 .card.top-card {
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
   border-color: #16a34a;
   color: #16a34a;
   box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.15);
@@ -681,6 +818,65 @@ async function onTopCardClick(index: number) {
 
 .column.drop-target:hover:not(:has(.top-card:hover)) {
   background: rgba(37, 99, 235, 0.06);
+}
+
+/* Drag and drop */
+.drag-source {
+  opacity: 0.3;
+}
+
+.drag-card {
+  position: fixed;
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 2px solid #2563eb;
+  border-radius: var(--card-radius);
+  background: var(--color-background);
+  color: #2563eb;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 200;
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(3deg);
+}
+
+.drag-card .card-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.drag-card .card-pip {
+  position: absolute;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.drag-card .card-pip.top-left {
+  top: 4px;
+  left: 6px;
+}
+
+.drag-card .card-pip.bottom-right {
+  bottom: 4px;
+  right: 6px;
+  transform: rotate(180deg);
+}
+
+.game.dragging-drawn .column {
+  outline: 2px dashed #2563eb;
+  outline-offset: -2px;
+  border-radius: var(--card-radius);
+}
+
+.game.dragging-column .piles {
+  outline: 2px dashed #16a34a;
+  outline-offset: 4px;
+  border-radius: var(--card-radius);
 }
 
 /* Destinations */
