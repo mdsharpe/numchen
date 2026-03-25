@@ -1,5 +1,5 @@
 <template>
-  <div class="game" :class="{ 'dragging-drawn': drag?.type === 'drawn' && drag.isDragging, 'dragging-column': drag?.type === 'column' && drag.isDragging }">
+  <div class="game">
     <div class="header">
       <div class="header-left">
         <span class="join-code">{{ joinCode }}</span>
@@ -29,9 +29,13 @@
         <div v-if="currentCard !== null && !hasPlaced" class="draw-pile">
           <div
             class="drawn-card"
-            :class="{ 'drag-source': drag?.type === 'drawn' && drag.isDragging }"
+            :class="{ 'drag-source': drag?.type === 'drawn' && drag.isDragging, 'tilted': hoverColumn !== null && currentCard !== null && !hasPlaced }"
             @pointerdown="onDrawnPointerDown"
-          >{{ currentCard }}</div>
+          >
+            <span class="card-pip top-left">{{ currentCard }}</span>
+            <span class="card-value">{{ currentCard }}</span>
+            <span class="card-pip bottom-right">{{ currentCard }}</span>
+          </div>
           <div class="draw-label">Place this card</div>
           <div v-if="countdown !== null" class="timer-bar-container">
             <div
@@ -56,7 +60,7 @@
         </div>
       </div>
 
-      <div class="piles" data-drop="destinations">
+      <div class="piles" :class="{ 'drag-over': dragOverDestinations }" data-drop="destinations">
         <div v-for="(pile, index) in destinations" :key="index" class="pile" data-drop="destinations">
           <div class="dest-card" :class="{ empty: pile === 0 }" data-drop="destinations">
             {{ pile > 0 ? pile : "" }}
@@ -70,9 +74,14 @@
         v-for="(column, index) in columns"
         :key="index"
         class="column"
-        :class="{ 'drop-target': currentCard !== null && !hasPlaced && !isProcessing }"
+        :class="{
+          'drop-target': currentCard !== null && !hasPlaced && !isProcessing,
+          'drag-over': dragOverColumn === index,
+        }"
         :data-column-index="index"
         @click="onPlaceCard(index)"
+        @pointerenter="hoverColumn = index"
+        @pointerleave="hoverColumn = hoverColumn === index ? null : hoverColumn"
       >
         <div class="card-stack">
           <div v-if="column.length === 0" class="card empty-placeholder"></div>
@@ -183,11 +192,22 @@ function onPlayerLeft(playerName: string) {
   players.value = players.value.filter((p) => p !== playerName);
 }
 
+function cancelDrag() {
+  if (drag.value) {
+    document.removeEventListener("pointermove", onPointerMove);
+    document.removeEventListener("pointerup", onPointerUp);
+    drag.value = null;
+    dragOverColumn.value = null;
+    dragOverDestinations.value = false;
+  }
+}
+
 function onCardAutoPlaced(columnIndex: number) {
   if (currentCard.value === null || hasPlaced.value) {
     return;
   }
 
+  cancelDrag();
   columns.value[columnIndex]!.push(currentCard.value);
   hasPlaced.value = true;
   currentCard.value = null;
@@ -288,7 +308,10 @@ interface DragState {
   isDragging: boolean;
 }
 
+const hoverColumn = ref<number | null>(null);
 const drag = ref<DragState | null>(null);
+const dragOverColumn = ref<number | null>(null);
+const dragOverDestinations = ref(false);
 const DRAG_THRESHOLD = 5;
 
 function onDrawnPointerDown(e: PointerEvent) {
@@ -333,7 +356,20 @@ function onPointerMove(e: PointerEvent) {
   if (drag.value.isDragging) {
     drag.value.x = e.clientX;
     drag.value.y = e.clientY;
+    updateDragOver(e);
   }
+}
+
+function updateDragOver(e: PointerEvent) {
+  const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+  if (!el) {
+    dragOverColumn.value = null;
+    dragOverDestinations.value = false;
+    return;
+  }
+  const colEl = el.closest("[data-column-index]");
+  dragOverColumn.value = colEl ? parseInt(colEl.getAttribute("data-column-index")!) : null;
+  dragOverDestinations.value = !!el.closest("[data-drop='destinations']");
 }
 
 function onPointerUp(e: PointerEvent) {
@@ -347,6 +383,8 @@ function onPointerUp(e: PointerEvent) {
   const wasDragging = drag.value.isDragging;
   const dragState = drag.value;
   drag.value = null;
+  dragOverColumn.value = null;
+  dragOverDestinations.value = false;
 
   if (wasDragging) {
     suppressNextClick = true;
@@ -681,13 +719,9 @@ async function onTopCardClick(index: number) {
 }
 
 .drawn-card {
+  position: relative;
   width: var(--card-width);
   height: var(--card-height);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  font-weight: 700;
   border: 2px solid #2563eb;
   border-radius: var(--card-radius);
   background: var(--color-background);
@@ -695,6 +729,11 @@ async function onTopCardClick(index: number) {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
   touch-action: none;
   cursor: grab;
+  transition: transform 0.25s;
+}
+
+.drawn-card.tilted {
+  transform: translate(2px, 4px) rotate(3deg);
 }
 
 .drawn-card.placeholder {
@@ -817,6 +856,9 @@ async function onTopCardClick(index: number) {
 }
 
 .column.drop-target:hover:not(:has(.top-card:hover)) {
+  outline: 2px dashed #2563eb;
+  outline-offset: -2px;
+  border-radius: var(--card-radius);
   background: rgba(37, 99, 235, 0.06);
 }
 
@@ -867,13 +909,14 @@ async function onTopCardClick(index: number) {
   transform: rotate(180deg);
 }
 
-.game.dragging-drawn .column {
+.column.drag-over {
   outline: 2px dashed #2563eb;
   outline-offset: -2px;
   border-radius: var(--card-radius);
+  background: rgba(37, 99, 235, 0.06);
 }
 
-.game.dragging-column .piles {
+.piles.drag-over {
   outline: 2px dashed #16a34a;
   outline-offset: 4px;
   border-radius: var(--card-radius);
