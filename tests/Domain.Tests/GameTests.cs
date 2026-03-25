@@ -203,6 +203,25 @@ public class GameTests
 
     [Theory]
     [AutoData]
+    public void MoveToDestination_AfterGameFinished_Throws(int seed, string playerId)
+    {
+        // Arrange
+        var game = new Game(new Random(seed));
+        game.AddPlayer(playerId);
+        game.Start();
+
+        while (game.State != GameState.Finished)
+        {
+            game.DrawCard();
+            game.PlaceCard(playerId, 0);
+        }
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => game.MoveToDestination(playerId, 0));
+    }
+
+    [Theory]
+    [AutoData]
     public void TwoPlayers_IndependentBoards(int seed, string playerId1, string playerId2)
     {
         // Arrange

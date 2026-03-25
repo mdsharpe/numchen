@@ -81,13 +81,13 @@
             :key="cardIndex"
             class="card"
             :class="{
-              'top-card': cardIndex === column.length - 1 && !isProcessing && canMoveToDestination(card),
+              'top-card': cardIndex === column.length - 1 && !isProcessing && !gameFinished && canMoveToDestination(card),
               'drag-source': drag?.type === 'column' && drag.columnIndex === index && drag.isDragging && cardIndex === column.length - 1,
             }"
             :style="{ top: cardIndex * getCardOffset(column.length) + 'px', zIndex: cardIndex }"
             :data-column-index="index"
             @click="onCardClick($event, index, cardIndex)"
-            @pointerdown="cardIndex === column.length - 1 && canMoveToDestination(card) && onColumnCardPointerDown($event, index, card)"
+            @pointerdown="cardIndex === column.length - 1 && !gameFinished && canMoveToDestination(card) && onColumnCardPointerDown($event, index, card)"
           >
             <span class="card-pip top-left">{{ card }}</span>
             <span class="card-value">{{ card }}</span>
@@ -557,7 +557,7 @@ function onCardClick(event: Event, columnIndex: number, cardIndex: number) {
 
 async function onTopCardClick(index: number) {
   const column = columns.value[index]!;
-  if (column.length === 0 || isProcessing.value) {
+  if (column.length === 0 || isProcessing.value || gameFinished.value) {
     return;
   }
 

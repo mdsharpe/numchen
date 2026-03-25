@@ -173,6 +173,11 @@ public class Game
 
     public int MoveToDestination(string playerId, int columnIndex)
     {
+        if (State == GameState.Finished)
+        {
+            throw new InvalidOperationException("Game is finished.");
+        }
+
         if (!_players.TryGetValue(playerId, out var board))
         {
             throw new InvalidOperationException($"Player '{playerId}' is not in the game.");
