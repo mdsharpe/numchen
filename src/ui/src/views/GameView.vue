@@ -1024,22 +1024,20 @@ async function onTopCardClick(index: number) {
   }
 
   .top-row {
-    flex-direction: column;
-    align-items: center;
-    gap: 0.4rem;
+    display: contents;
+  }
+
+  .draw-area {
+    align-self: center;
     padding: 0.3rem 0;
   }
 
-  .draw-label {
-    font-size: 0.85rem;
-  }
-
-  .timer-bar-container {
-    width: 100px;
-  }
-
   .piles {
+    order: 2;
+    align-self: center;
     gap: 0.25rem;
+    padding: 0.3rem 0;
+    flex-shrink: 0;
   }
 
   .dest-card {
@@ -1047,6 +1045,7 @@ async function onTopCardClick(index: number) {
   }
 
   .tableau {
+    order: 1;
     gap: 0.25rem;
   }
 
