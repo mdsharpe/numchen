@@ -227,4 +227,20 @@ async function joinGame() {
   margin-top: 1rem;
   font-size: 0.875rem;
 }
+
+@media (max-width: 640px) {
+  .lobby {
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .title {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .panel {
+    padding: 1.5rem;
+  }
+}
 </style>

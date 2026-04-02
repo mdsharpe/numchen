@@ -150,6 +150,11 @@ const isProcessing = ref(false);
 let autoPlayGeneration = 0;
 const countdown = ref<number | null>(null);
 let countdownInterval: ReturnType<typeof setInterval> | null = null;
+const windowWidth = ref(window.innerWidth);
+
+function onWindowResize() {
+  windowWidth.value = window.innerWidth;
+}
 
 const timerPercent = computed(() => {
   if (countdown.value === null) {
@@ -273,6 +278,7 @@ async function tryRejoin(): Promise<boolean> {
 }
 
 onMounted(async () => {
+  window.addEventListener("resize", onWindowResize);
   hub.on("PlayerJoined", onPlayerJoined);
   hub.on("PlayerLeft", onPlayerLeft);
   hub.on("CardAutoPlaced", onCardAutoPlaced);
@@ -286,6 +292,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener("resize", onWindowResize);
   hub.off("PlayerJoined", onPlayerJoined);
   hub.off("PlayerLeft", onPlayerLeft);
   hub.off("CardAutoPlaced", onCardAutoPlaced);
@@ -420,8 +427,6 @@ function onPointerUp(e: PointerEvent) {
   }
 }
 
-const CARD_HEIGHT = 40;
-const MAX_STACK_HEIGHT = 280;
 const MAX_CARD_OFFSET = 18;
 const MIN_CARD_OFFSET = 6;
 
@@ -429,7 +434,10 @@ function getCardOffset(cardCount: number): number {
   if (cardCount <= 1) {
     return 0;
   }
-  const offset = (MAX_STACK_HEIGHT - CARD_HEIGHT) / (cardCount - 1);
+  const mobile = windowWidth.value < 640;
+  const cardHeight = mobile ? 28 : 40;
+  const maxStackHeight = mobile ? 200 : 280;
+  const offset = (maxStackHeight - cardHeight) / (cardCount - 1);
   return Math.max(MIN_CARD_OFFSET, Math.min(MAX_CARD_OFFSET, offset));
 }
 
@@ -621,8 +629,10 @@ async function onTopCardClick(index: number) {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   padding: 0.25rem 0.5rem;
   position: relative;
+  touch-action: manipulation;
 }
 
 /* Header */
@@ -984,5 +994,110 @@ async function onTopCardClick(index: number) {
 .finished-text {
   font-size: 1.75rem;
   font-weight: 700;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .game {
+    --card-width: 48px;
+    --card-height: 66px;
+    --card-radius: 6px;
+    padding: 0.25rem;
+  }
+
+  .header {
+    padding: 0.15rem 0;
+  }
+
+  .join-code {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .player-list {
+    font-size: 0.8rem;
+  }
+
+  .btn {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .top-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0;
+  }
+
+  .draw-label {
+    font-size: 0.85rem;
+  }
+
+  .timer-bar-container {
+    width: 100px;
+  }
+
+  .piles {
+    gap: 0.25rem;
+  }
+
+  .dest-card {
+    font-size: 1.1rem;
+  }
+
+  .tableau {
+    gap: 0.25rem;
+  }
+
+  .card-value {
+    font-size: 1.1rem;
+  }
+
+  .card-pip {
+    font-size: 0.55rem;
+  }
+
+  .card-pip.top-left {
+    top: 2px;
+    left: 4px;
+  }
+
+  .card-pip.bottom-right {
+    bottom: 2px;
+    right: 4px;
+  }
+
+  .drag-card .card-value {
+    font-size: 1.1rem;
+  }
+
+  .drag-card .card-pip {
+    font-size: 0.55rem;
+  }
+
+  .drag-card .card-pip.top-left {
+    top: 2px;
+    left: 4px;
+  }
+
+  .drag-card .card-pip.bottom-right {
+    bottom: 2px;
+    right: 4px;
+  }
+
+  .finished-panel {
+    padding: 1.5rem 2rem;
+  }
+
+  .finished-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+
+  .finished-text {
+    font-size: 1.3rem;
+  }
 }
 </style>
