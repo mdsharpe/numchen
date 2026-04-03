@@ -417,5 +417,12 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/*.tfvars
+!infra/*.tfvars.example
+
 # Claude Code local project files
 .claude/projects/
