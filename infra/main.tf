@@ -25,6 +25,11 @@ resource "azurerm_container_app" "api" {
       cpu    = 0.25
       memory = "0.5Gi"
     }
+
+    http_scale_rule {
+      name                = "http-scaler"
+      concurrent_requests = 10
+    }
   }
 
   ingress {

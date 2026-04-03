@@ -2,7 +2,11 @@
   <div class="lobby">
     <h1 class="title">Numchen</h1>
 
-    <div v-if="!isConnected" class="connecting">Connecting...</div>
+    <div v-if="!isConnected && !error" class="connecting">
+      <div class="spinner"></div>
+      <div>Connecting to server...</div>
+      <div v-if="isSlow" class="connecting-hint">The server is waking up, this may take a moment</div>
+    </div>
 
     <div v-else class="panel">
       <div class="field">
@@ -52,14 +56,21 @@ const route = useRoute();
 const playerName = ref("");
 const joinCode = ref((route.query.joinCode as string) ?? "");
 const isConnected = ref(false);
+const isSlow = ref(false);
 const error = ref("");
 
 onMounted(async () => {
+  const slowTimer = setTimeout(() => {
+    isSlow.value = true;
+  }, 3000);
+
   try {
     await hub.start();
     isConnected.value = true;
   } catch (e) {
-    error.value = "Failed to connect to server.";
+    error.value = "Failed to connect to server. Please try refreshing the page.";
+  } finally {
+    clearTimeout(slowTimer);
   }
 });
 
@@ -113,6 +124,28 @@ async function joinGame() {
 .connecting {
   color: var(--color-text);
   opacity: 0.6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.connecting-hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
 }
 
 .panel {
