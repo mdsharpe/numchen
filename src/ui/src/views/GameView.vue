@@ -31,6 +31,7 @@
           <div
             class="drawn-card"
             :class="{ 'drag-source': drag?.type === 'drawn' && drag.isDragging, 'tilted': hoverColumn !== null && currentCard !== null && !hasPlaced }"
+            :style="getCardStyle(currentCard!)"
             @pointerdown="onDrawnPointerDown"
           >
             <span class="card-pip top-left">{{ currentCard }}</span>
@@ -63,7 +64,7 @@
 
       <div class="piles" :class="{ 'drag-over': dragOverDestinations }" data-drop="destinations">
         <div v-for="(pile, index) in destinations" :key="index" class="pile" data-drop="destinations">
-          <div class="dest-card" :class="{ empty: pile === 0 }" data-drop="destinations">
+          <div class="dest-card" :class="{ empty: pile === 0 }" :style="pile > 0 ? getCardStyle(pile) : undefined" data-drop="destinations">
             {{ pile > 0 ? pile : "" }}
           </div>
         </div>
@@ -94,7 +95,7 @@
               'top-card': cardIndex === column.length - 1 && !isProcessing && !gameFinished && canMoveToDestination(card),
               'drag-source': drag?.type === 'column' && drag.columnIndex === index && drag.isDragging && cardIndex === column.length - 1,
             }"
-            :style="{ top: cardIndex * getCardOffset(column.length) + 'px', zIndex: cardIndex }"
+            :style="{ top: cardIndex * getCardOffset(column.length) + 'px', zIndex: cardIndex, ...getCardStyle(card) }"
             :data-column-index="index"
             @click="onCardClick($event, index, cardIndex)"
             @pointerdown="cardIndex === column.length - 1 && !gameFinished && canMoveToDestination(card) && onColumnCardPointerDown($event, index, card)"
@@ -110,7 +111,7 @@
     <div
       v-if="drag && drag.isDragging"
       class="drag-card"
-      :style="{ left: drag.x + 'px', top: drag.y + 'px' }"
+      :style="{ left: drag.x + 'px', top: drag.y + 'px', ...getCardStyle(drag.cardValue) }"
     >
       <span class="card-pip top-left">{{ drag.cardValue }}</span>
       <span class="card-value">{{ drag.cardValue }}</span>
@@ -156,6 +157,14 @@ const windowWidth = ref(window.innerWidth);
 
 function onWindowResize() {
   windowWidth.value = window.innerWidth;
+}
+
+function getCardStyle(cardNumber: number) {
+  return {
+    color: `var(--card-color-${cardNumber})`,
+    background: `var(--card-bg-${cardNumber})`,
+    borderColor: `var(--card-border-${cardNumber})`,
+  };
 }
 
 const timerPercent = computed(() => {
@@ -638,6 +647,25 @@ async function onTopCardClick(index: number) {
   --card-height: 96px;
   --card-radius: 8px;
 
+  /* Distinct card colors (1–16): dark text, light bg, medium border */
+  /* Adjacent numbers use contrasting hues for easy visual scanning */
+  --card-color-1: #1e3a5f; --card-bg-1: #dbeafe; --card-border-1: #93c5fd; /* blue */
+  --card-color-2: #7f1d1d; --card-bg-2: #fee2e2; --card-border-2: #fca5a5; /* red */
+  --card-color-3: #14532d; --card-bg-3: #dcfce7; --card-border-3: #86efac; /* green */
+  --card-color-4: #4c1d95; --card-bg-4: #ede9fe; --card-border-4: #c4b5fd; /* purple */
+  --card-color-5: #78350f; --card-bg-5: #fef3c7; --card-border-5: #fcd34d; /* amber */
+  --card-color-6: #134e4a; --card-bg-6: #ccfbf1; --card-border-6: #5eead4; /* teal */
+  --card-color-7: #831843; --card-bg-7: #fce7f3; --card-border-7: #f9a8d4; /* pink */
+  --card-color-8: #365314; --card-bg-8: #ecfccb; --card-border-8: #bef264; /* lime */
+  --card-color-9: #312e81; --card-bg-9: #e0e7ff; --card-border-9: #a5b4fc; /* indigo */
+  --card-color-10: #7c2d12; --card-bg-10: #ffedd5; --card-border-10: #fdba74; /* orange */
+  --card-color-11: #164e63; --card-bg-11: #cffafe; --card-border-11: #67e8f9; /* cyan */
+  --card-color-12: #701a75; --card-bg-12: #fae8ff; --card-border-12: #f0abfc; /* magenta */
+  --card-color-13: #0c4a6e; --card-bg-13: #e0f2fe; --card-border-13: #7dd3fc; /* sky */
+  --card-color-14: #451a03; --card-bg-14: #fde8cd; --card-border-14: #d6a87c; /* brown */
+  --card-color-15: #881337; --card-bg-15: #ffe4e6; --card-border-15: #fda4af; /* rose */
+  --card-color-16: #713f12; --card-bg-16: #fef9c3; --card-border-16: #fde68a; /* gold */
+
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -755,11 +783,9 @@ async function onTopCardClick(index: number) {
   position: relative;
   width: var(--card-width);
   height: var(--card-height);
-  border: 2px solid #2563eb;
+  border: 2px solid;
   border-radius: var(--card-radius);
-  background: var(--color-background);
-  color: #2563eb;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   touch-action: none;
   cursor: grab;
   transition: transform 0.25s;
@@ -771,9 +797,9 @@ async function onTopCardClick(index: number) {
 
 .drawn-card.placeholder {
   border-style: dashed;
-  border-color: var(--color-border);
+  border-color: var(--color-border-hover);
   box-shadow: none;
-  opacity: 0.3;
+  opacity: 0.6;
 }
 
 .draw-label {
@@ -828,10 +854,11 @@ async function onTopCardClick(index: number) {
   transform: translateX(-50%);
   width: var(--card-width);
   height: var(--card-height);
-  border: 1px solid var(--color-border);
+  border: 2px solid;
   border-radius: var(--card-radius);
   background: var(--color-background);
   color: var(--color-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   user-select: none;
 }
 
@@ -866,21 +893,22 @@ async function onTopCardClick(index: number) {
 .card.empty-placeholder {
   position: relative;
   border-style: dashed;
-  opacity: 0.3;
+  border-color: var(--color-border-hover);
+  opacity: 0.6;
   background: var(--color-background-mute);
+  box-shadow: none;
 }
 
 .card.top-card {
   cursor: grab;
   touch-action: none;
-  border-color: #16a34a;
-  color: #16a34a;
-  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.15);
+  outline: 2px solid #16a34a;
+  outline-offset: -1px;
   transition: all 0.15s;
 }
 
 .card.top-card:hover {
-  background: var(--color-accent-green-hover);
+  outline-width: 3px;
   box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
 }
 
@@ -904,43 +932,14 @@ async function onTopCardClick(index: number) {
   position: fixed;
   width: var(--card-width);
   height: var(--card-height);
-  border: 2px solid #2563eb;
+  border: 2px solid;
   border-radius: var(--card-radius);
-  background: var(--color-background);
-  color: #2563eb;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   z-index: 200;
   pointer-events: none;
   transform: translate(-50%, -50%) rotate(3deg);
 }
 
-.drag-card .card-value {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.drag-card .card-pip {
-  position: absolute;
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.drag-card .card-pip.top-left {
-  top: 4px;
-  left: 6px;
-}
-
-.drag-card .card-pip.bottom-right {
-  bottom: 4px;
-  right: 6px;
-  transform: rotate(180deg);
-}
 
 .column.drag-over {
   outline: 2px dashed #2563eb;
@@ -967,17 +966,19 @@ async function onTopCardClick(index: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-border);
+  border: 2px solid;
   border-radius: var(--card-radius);
   font-size: 1.5rem;
   font-weight: 700;
   background: var(--color-background-soft);
   color: var(--color-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .dest-card.empty {
   border-style: dashed;
-  opacity: 0.4;
+  border-color: var(--color-border-hover);
+  opacity: 0.6;
   background: var(--color-background-mute);
 }
 
@@ -1017,6 +1018,28 @@ async function onTopCardClick(index: number) {
 .finished-text {
   font-size: 1.75rem;
   font-weight: 700;
+}
+
+/* Dark-mode card colors: light text on deep-toned backgrounds */
+@media (prefers-color-scheme: dark) {
+  .game {
+    --card-color-1: #bfdbfe; --card-bg-1: #1e3a5f; --card-border-1: #2563eb; /* blue */
+    --card-color-2: #fecaca; --card-bg-2: #5c1a1a; --card-border-2: #dc2626; /* red */
+    --card-color-3: #bbf7d0; --card-bg-3: #14392d; --card-border-3: #16a34a; /* green */
+    --card-color-4: #ddd6fe; --card-bg-4: #3b1a6e; --card-border-4: #7c3aed; /* purple */
+    --card-color-5: #fde68a; --card-bg-5: #5c3a0e; --card-border-5: #d97706; /* amber */
+    --card-color-6: #99f6e4; --card-bg-6: #134040; --card-border-6: #0d9488; /* teal */
+    --card-color-7: #fbcfe8; --card-bg-7: #5c1638; --card-border-7: #db2777; /* pink */
+    --card-color-8: #d9f99d; --card-bg-8: #2d3d14; --card-border-8: #65a30d; /* lime */
+    --card-color-9: #c7d2fe; --card-bg-9: #272560; --card-border-9: #4f46e5; /* indigo */
+    --card-color-10: #fed7aa; --card-bg-10: #5c2510; --card-border-10: #ea580c; /* orange */
+    --card-color-11: #a5f3fc; --card-bg-11: #134050; --card-border-11: #0891b2; /* cyan */
+    --card-color-12: #f5d0fe; --card-bg-12: #4a1552; --card-border-12: #a21caf; /* magenta */
+    --card-color-13: #bae6fd; --card-bg-13: #0c3a5e; --card-border-13: #0284c7; /* sky */
+    --card-color-14: #e8d5c0; --card-bg-14: #3d2510; --card-border-14: #92400e; /* brown */
+    --card-color-15: #fecdd3; --card-bg-15: #5c1229; --card-border-15: #e11d48; /* rose */
+    --card-color-16: #fef08a; --card-bg-16: #4d3a10; --card-border-16: #ca8a04; /* gold */
+  }
 }
 
 /* Mobile */
@@ -1086,24 +1109,6 @@ async function onTopCardClick(index: number) {
   }
 
   .card-pip.bottom-right {
-    bottom: 2px;
-    right: 4px;
-  }
-
-  .drag-card .card-value {
-    font-size: 1.1rem;
-  }
-
-  .drag-card .card-pip {
-    font-size: 0.55rem;
-  }
-
-  .drag-card .card-pip.top-left {
-    top: 2px;
-    left: 4px;
-  }
-
-  .drag-card .card-pip.bottom-right {
     bottom: 2px;
     right: 4px;
   }
