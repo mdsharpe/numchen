@@ -66,6 +66,7 @@ gh variable set AZURE_TENANT_ID --body "$TENANT_ID"
 gh variable set AZURE_SUBSCRIPTION_ID --body "$SUBSCRIPTION_ID"
 gh variable set AZURE_RESOURCE_GROUP --body "$RG_NAME"
 gh variable set AZURE_CONTAINER_APP_NAME --body "$CONTAINER_APP_NAME"
+gh variable set AZURE_STATIC_WEB_APP_NAME --body "$SWA_NAME"
 gh variable set VITE_API_URL --body "https://$API_FQDN"
 
 echo "Setting GitHub secrets..."
