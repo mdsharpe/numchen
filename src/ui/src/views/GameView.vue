@@ -2,6 +2,7 @@
   <div class="game">
     <div class="header">
       <div class="header-left">
+        <a class="home-link" href="/" @click.prevent="goHome">Numchen</a>
         <span class="join-code">{{ joinCode }}</span>
         <span class="player-list">{{ players.join(", ") }}</span>
       </div>
@@ -14,7 +15,7 @@
           Start Game
         </button>
         <button
-          v-if="!gameFinished"
+          v-if="!gameFinished && isDev"
           class="btn"
           :class="{ active: autoPlay }"
           @click="toggleAutoPlay"
@@ -134,6 +135,7 @@ const route = useRoute();
 const router = useRouter();
 const hub = getGameHub();
 
+const isDev = import.meta.env.DEV;
 const PLACEMENT_TIMEOUT_SECONDS = 30;
 
 const joinCode = route.params.joinCode as string;
@@ -561,6 +563,16 @@ async function toggleAutoPlay(): Promise<void> {
   }
 }
 
+function goHome() {
+  if (!gameFinished.value && gameStarted.value) {
+    if (!confirm("Leave this game? Your progress will be lost.")) {
+      return;
+    }
+  }
+  sessionStorage.removeItem("numchen_session");
+  router.push({ name: "lobby" });
+}
+
 async function startGame() {
   await hub.startGame();
 }
@@ -654,6 +666,17 @@ async function onTopCardClick(index: number) {
 .header-right {
   display: flex;
   gap: 0.5rem;
+}
+
+.home-link {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-heading);
+  text-decoration: none;
+}
+
+.home-link:hover {
+  text-decoration: underline;
 }
 
 .join-code {
