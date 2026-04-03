@@ -2,7 +2,9 @@ name: Deploy
 
 on:
   workflow_dispatch:
-  push:
+  workflow_run:
+    workflows: [Build]
+    types: [completed]
     branches: [main]
 
 permissions:
@@ -13,6 +15,7 @@ permissions:
 jobs:
   api:
     name: Deploy API
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -44,6 +47,7 @@ jobs:
 
   ui:
     name: Deploy UI
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     defaults:
       run:
