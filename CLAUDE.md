@@ -10,6 +10,12 @@ Building in vertical slices, each delivering something runnable:
 4. Polish
    - ~~Edge cases: player disconnect mid-game, preventing double-clicks, clearing sessionStorage on game finish~~ (done)
    - ~~Time limit before forcing the next card draw~~ (done)
+   - Drag directly from drawn card to destination piles (currently must place in column first)
+   - Fix touch dismissal to destination piles — taps register as small drags
+   - Distinct color per card number (1–16), legible in both light and dark mode
+   - Increase placement timeout by 50% (30s → 45s)
+   - Improve contrast across the board — columns not visually distinct enough
+   - Player move indicators — show whether each player has played their move (e.g. dot under name)
    - Better card styling, layout improvements, color/typography
    - Card animations (placement, moves to destination, draw)
    - Surface hub errors to the user (failures are mostly silent), connection loss feedback
