@@ -11,7 +11,7 @@ Building in vertical slices, each delivering something runnable:
    - ~~Edge cases: player disconnect mid-game, preventing double-clicks, clearing sessionStorage on game finish~~ (done)
    - ~~Time limit before forcing the next card draw~~ (done)
    - ~~Drag directly from drawn card to destination piles (currently must place in column first)~~ (done)
-   - Fix touch dismissal to destination piles — taps register as small drags
+   - ~~Fix touch dismissal to destination piles — taps register as small drags~~ (done)
    - ~~Distinct color per card number (1–16), legible in both light and dark mode~~ (done)
    - ~~Increase placement timeout by 50% (30s → 45s)~~ (done)
    - ~~Improve contrast across the board — columns not visually distinct enough~~ (done)
