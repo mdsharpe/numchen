@@ -324,6 +324,7 @@ interface DragState {
   x: number;
   y: number;
   isDragging: boolean;
+  pointerType: string;
 }
 
 const hoverColumn = ref<number | null>(null);
@@ -331,6 +332,7 @@ const drag = ref<DragState | null>(null);
 const dragOverColumn = ref<number | null>(null);
 const dragOverDestinations = ref(false);
 const DRAG_THRESHOLD = 5;
+const TOUCH_DRAG_THRESHOLD = 12;
 
 function onDrawnPointerDown(e: PointerEvent) {
   if (currentCard.value === null || hasPlaced.value || isProcessing.value) {
@@ -357,6 +359,7 @@ function startDrag(e: PointerEvent, type: "drawn" | "column", columnIndex: numbe
     x: e.clientX,
     y: e.clientY,
     isDragging: false,
+    pointerType: e.pointerType,
   };
   document.addEventListener("pointermove", onPointerMove);
   document.addEventListener("pointerup", onPointerUp);
@@ -368,7 +371,8 @@ function onPointerMove(e: PointerEvent) {
   }
   const dx = e.clientX - drag.value.startX;
   const dy = e.clientY - drag.value.startY;
-  if (!drag.value.isDragging && Math.sqrt(dx * dx + dy * dy) >= DRAG_THRESHOLD) {
+  const threshold = drag.value.pointerType === "touch" ? TOUCH_DRAG_THRESHOLD : DRAG_THRESHOLD;
+  if (!drag.value.isDragging && Math.sqrt(dx * dx + dy * dy) >= threshold) {
     drag.value.isDragging = true;
   }
   if (drag.value.isDragging) {
