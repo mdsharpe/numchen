@@ -16,6 +16,7 @@ Building in vertical slices, each delivering something runnable:
    - ~~Increase placement timeout by 50% (30s → 45s)~~ (done)
    - ~~Improve contrast across the board — columns not visually distinct enough~~ (done)
    - Player move indicators — show whether each player has played their move (e.g. dot under name)
+   - Shimmer effect on dismissable cards — bottom border disappears when shimmer is active (tried pseudo-element and background-image approaches, root cause unclear)
    - Better card styling, layout improvements, color/typography
    - Card animations (placement, moves to destination, draw)
    - Surface hub errors to the user (failures are mostly silent), connection loss feedback
