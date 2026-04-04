@@ -30,7 +30,7 @@
         <div v-if="currentCard !== null && !hasPlaced" class="draw-pile">
           <div
             class="drawn-card"
-            :class="{ 'drag-source': drag?.type === 'drawn' && drag.isDragging, 'tilted': hoverColumn !== null && currentCard !== null && !hasPlaced }"
+            :class="{ 'drag-source': drag?.type === 'drawn' && drag.isDragging, 'tilted': hoverColumn !== null && currentCard !== null && !hasPlaced, 'shimmer': currentCard !== null && !hasPlaced && canMoveToDestination(currentCard) }"
             :style="getCardStyle(currentCard!)"
             @pointerdown="onDrawnPointerDown"
           >
@@ -62,7 +62,7 @@
         </div>
       </div>
 
-      <div class="piles" :class="{ 'drag-over': dragOverDestinations }" data-drop="destinations" @click="onPlaceDrawnCardToDestination">
+      <div class="piles" :class="{ 'drag-over': dragOverDestinations, 'drop-target': currentCard !== null && !hasPlaced && !isProcessing && canMoveToDestination(currentCard) }" data-drop="destinations" @click="onPlaceDrawnCardToDestination">
         <div v-for="(pile, index) in destinations" :key="index" class="pile" data-drop="destinations">
           <div class="dest-card" :class="{ empty: pile === 0 }" :style="pile > 0 ? getCardStyle(pile) : undefined" data-drop="destinations">
             {{ pile > 0 ? pile : "" }}
@@ -162,7 +162,7 @@ function onWindowResize() {
 function getCardStyle(cardNumber: number) {
   return {
     color: `var(--card-color-${cardNumber})`,
-    background: `var(--card-bg-${cardNumber})`,
+    backgroundColor: `var(--card-bg-${cardNumber})`,
     borderColor: `var(--card-border-${cardNumber})`,
   };
 }
@@ -937,20 +937,37 @@ async function onTopCardClick(index: number) {
   box-shadow: none;
 }
 
+@keyframes shimmer {
+  0%   { background-position: -100% center; }
+  100% { background-position: 200% center; }
+}
+
 .card.top-card {
   cursor: grab;
   touch-action: none;
-  outline: 2px solid #16a34a;
-  outline-offset: -1px;
-  transition: all 0.15s;
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: -2px;
+  transition: box-shadow 0.15s;
+}
+
+.card.top-card,
+.drawn-card.shimmer {
+  background-image: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.5s ease-in-out infinite;
 }
 
 .card.top-card:hover {
-  outline-width: 3px;
-  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4), 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
-.column.drop-target {
+.column.drop-target,
+.piles.drop-target {
   cursor: pointer;
 }
 
