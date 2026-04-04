@@ -5,7 +5,7 @@ namespace Numchen.Api.Features.Game;
 public class GameHub : Hub
 {
     private static readonly TimeSpan DisconnectGracePeriod = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan PlacementTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan PlacementTimeout = TimeSpan.FromSeconds(45);
 
     private readonly GameSessionStore _store;
     private readonly IHubContext<GameHub> _hubContext;
