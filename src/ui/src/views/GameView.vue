@@ -387,7 +387,11 @@ function updateDragOver(e: PointerEvent) {
   }
   const colEl = el.closest("[data-column-index]");
   dragOverColumn.value = colEl ? parseInt(colEl.getAttribute("data-column-index")!) : null;
-  dragOverDestinations.value = !!el.closest("[data-drop='destinations']");
+  const overDestinations = !!el.closest("[data-drop='destinations']");
+  dragOverDestinations.value = overDestinations && (
+    drag.value?.type === "column" ||
+    (drag.value?.type === "drawn" && currentCard.value !== null && canMoveToDestination(currentCard.value))
+  );
 }
 
 function onPointerUp(e: PointerEvent) {
@@ -425,6 +429,11 @@ function onPointerUp(e: PointerEvent) {
   }
 
   if (dragState.type === "drawn") {
+    const destEl = (el as HTMLElement).closest("[data-drop='destinations']");
+    if (destEl) {
+      onPlaceDrawnCardToDestination();
+      return;
+    }
     const columnEl = (el as HTMLElement).closest("[data-column-index]");
     if (columnEl) {
       const colIndex = parseInt(columnEl.getAttribute("data-column-index")!);
@@ -619,6 +628,31 @@ function onCardClick(event: Event, columnIndex: number, cardIndex: number) {
   if (isTopCard && topCard !== null && !isProcessing.value && canMoveToDestination(topCard)) {
     event.stopPropagation();
     onTopCardClick(columnIndex);
+  }
+}
+
+async function onPlaceDrawnCardToDestination() {
+  if (currentCard.value === null || hasPlaced.value || isProcessing.value) {
+    return;
+  }
+  if (!canMoveToDestination(currentCard.value)) {
+    return;
+  }
+
+  const colIndex = columns.value
+    .map((col, i) => ({ i, len: col.length }))
+    .sort((a, b) => a.len - b.len)[0]!.i;
+
+  isProcessing.value = true;
+  try {
+    const card = currentCard.value;
+    hasPlaced.value = true;
+    currentCard.value = null;
+    await hub.placeCard(colIndex);
+    const { pileIndex } = await hub.moveToDestination(colIndex);
+    destinations.value[pileIndex] = card;
+  } finally {
+    isProcessing.value = false;
   }
 }
 
