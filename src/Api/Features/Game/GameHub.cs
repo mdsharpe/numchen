@@ -72,6 +72,11 @@ public class GameHub : Hub
             _hubContext.Clients.Client(connectionId)
                 .SendAsync("CardAutoPlaced", columnIndex)
                 .GetAwaiter().GetResult();
+
+            var playerName = session.GetPlayerNameByPlayerId(playerId);
+            _hubContext.Clients.Group(session.Id)
+                .SendAsync("PlayerPlaced", playerName)
+                .GetAwaiter().GetResult();
         }
 
         var clients = _hubContext.Clients.Group(session.Id);
@@ -136,10 +141,21 @@ public class GameHub : Hub
             destinations[i] = board.GetDestinationPileTopValue(i);
         }
 
+        var players = session.Game.PlayerIds.Select(pid => new
+        {
+            Name = session.GetPlayerNameByPlayerId(pid),
+            Score = session.GetPlayerScore(pid),
+        }).ToList();
+
+        var placedPlayers = session.Game.State == Domain.GameState.PlacingCard
+            ? session.Game.ReadyPlayers.Select(pid => session.GetPlayerNameByPlayerId(pid)).ToList()
+            : new List<string>();
+
         return new
         {
             JoinCode = session.JoinCode,
-            Players = session.GetPlayerNames(),
+            Players = players,
+            PlacedPlayers = placedPlayers,
             GameStarted = session.Game.State != Domain.GameState.WaitingForPlayers,
             GameFinished = session.Game.State == Domain.GameState.Finished,
             CurrentCard = session.Game.CurrentCard?.Value,
@@ -175,19 +191,28 @@ public class GameHub : Hub
             session.Game.PlaceCard(playerId, columnIndex);
         }
 
+        var playerName = session.GetPlayerNameByPlayerId(playerId);
+        await Clients.Group(session.Id).SendAsync("PlayerPlaced", playerName);
         await BroadcastGameStateAdvance(session, Clients.Group(session.Id));
     }
 
-    public object MoveToDestination(int columnIndex)
+    public async Task<object> MoveToDestination(int columnIndex)
     {
         var session = GetSessionForCurrentConnection();
         var playerId = session.GetPlayerId(Context.ConnectionId);
 
+        int pileIndex;
+        int score;
         lock (session.Lock)
         {
-            var pileIndex = session.Game.MoveToDestination(playerId, columnIndex);
-            return new { PileIndex = pileIndex };
+            pileIndex = session.Game.MoveToDestination(playerId, columnIndex);
+            score = session.GetPlayerScore(playerId);
         }
+
+        var playerName = session.GetPlayerNameByPlayerId(playerId);
+        await Clients.Group(session.Id).SendAsync("PlayerScored", playerName, score);
+
+        return new { PileIndex = pileIndex };
     }
 
     private async Task BroadcastGameStateAdvance(GameSession session, IClientProxy clients)

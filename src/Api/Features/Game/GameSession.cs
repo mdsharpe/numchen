@@ -66,9 +66,21 @@ public class GameSession
         return _playerNamesByPlayerId[playerId];
     }
 
+    public string GetPlayerNameByPlayerId(string playerId)
+    {
+        return _playerNamesByPlayerId[playerId];
+    }
+
     public IReadOnlyList<string> GetPlayerNames()
     {
         return _playerNamesByPlayerId.Values.ToList();
+    }
+
+    public int GetPlayerScore(string playerId)
+    {
+        var board = Game.GetPlayerBoard(playerId);
+        return Enumerable.Range(0, Domain.PlayerBoard.DestinationPileCount)
+            .Sum(i => board.GetDestinationPileCardCount(i));
     }
 
     public bool GetHasPlayerPlaced(string playerId)

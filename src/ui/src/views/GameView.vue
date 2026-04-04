@@ -4,8 +4,16 @@
       <div class="header-left">
         <a class="home-link" href="/" @click.prevent="goHome">Numchen</a>
         <span class="join-code">{{ joinCode }}</span>
-        <span class="player-list">{{ players.join(", ") }}</span>
       </div>
+      <TransitionGroup name="player-sort" tag="div" class="player-zones">
+        <div v-for="p in sortedPlayers" :key="p.name" class="player-zone">
+          <div class="player-zone-name">{{ p.name }}</div>
+          <div class="player-zone-meta">
+            <span class="player-zone-score">{{ p.score }}</span>
+            <span class="placed-dot" :class="{ active: p.hasPlaced }"></span>
+          </div>
+        </div>
+      </TransitionGroup>
       <div class="header-right">
         <button
           v-if="!gameStarted"
@@ -49,7 +57,10 @@
         </div>
         <div v-else-if="hasPlaced" class="draw-pile">
           <div class="drawn-card placeholder"></div>
-          <div class="draw-label">Waiting for other players...</div>
+          <div class="draw-label">
+            <template v-if="waitingFor.length > 0">Waiting for {{ waitingFor.join(', ') }}…</template>
+            <template v-else>Waiting for other players...</template>
+          </div>
           <div v-if="countdown !== null" class="timer-bar-container">
             <div
               class="timer-bar"
@@ -118,6 +129,12 @@
       <span class="card-pip bottom-right">{{ drag.cardValue }}</span>
     </div>
 
+    <div class="toast-container">
+      <TransitionGroup name="toast">
+        <div v-for="t in toasts" :key="t.id" class="toast">{{ t.message }}</div>
+      </TransitionGroup>
+    </div>
+
     <div v-if="gameFinished" class="finished-overlay">
       <div class="finished-panel">
         <div class="finished-icon">&#10003;</div>
@@ -139,8 +156,15 @@ const hub = getGameHub();
 const isDev = import.meta.env.DEV;
 const PLACEMENT_TIMEOUT_SECONDS = 30;
 
+interface PlayerInfo {
+  name: string;
+  score: number;
+  hasPlaced: boolean;
+}
+
 const joinCode = route.params.joinCode as string;
-const players = ref<string[]>([]);
+const playerInfos = ref<PlayerInfo[]>([]);
+const myName = ref("");
 const gameStarted = ref(false);
 const gameFinished = ref(false);
 const currentCard = ref<number | null>(null);
@@ -157,6 +181,29 @@ const windowWidth = ref(window.innerWidth);
 
 function onWindowResize() {
   windowWidth.value = window.innerWidth;
+}
+
+const sortedPlayers = computed(() =>
+  [...playerInfos.value].sort((a, b) => b.score - a.score)
+);
+
+const waitingFor = computed(() =>
+  playerInfos.value.filter(p => !p.hasPlaced).map(p => p.name)
+);
+
+interface Toast {
+  id: number;
+  message: string;
+}
+const toasts = ref<Toast[]>([]);
+let nextToastId = 0;
+
+function showToast(message: string) {
+  const id = nextToastId++;
+  toasts.value.push({ id, message });
+  setTimeout(() => {
+    toasts.value = toasts.value.filter(t => t.id !== id);
+  }, 1500);
 }
 
 function getCardStyle(cardNumber: number) {
@@ -201,11 +248,28 @@ function stopCountdown() {
 }
 
 function onPlayerJoined(playerName: string) {
-  players.value.push(playerName);
+  playerInfos.value.push({ name: playerName, score: 0, hasPlaced: false });
 }
 
 function onPlayerLeft(playerName: string) {
-  players.value = players.value.filter((p) => p !== playerName);
+  playerInfos.value = playerInfos.value.filter(p => p.name !== playerName);
+}
+
+function onPlayerPlaced(playerName: string) {
+  const p = playerInfos.value.find(p => p.name === playerName);
+  if (p) {
+    p.hasPlaced = true;
+  }
+  if (playerName !== myName.value) {
+    showToast(`${playerName} placed ✓`);
+  }
+}
+
+function onPlayerScored(playerName: string, score: number) {
+  const p = playerInfos.value.find(p => p.name === playerName);
+  if (p) {
+    p.score = score;
+  }
 }
 
 function cancelDrag() {
@@ -227,6 +291,10 @@ function onCardAutoPlaced(columnIndex: number) {
   columns.value[columnIndex]!.push(currentCard.value);
   hasPlaced.value = true;
   currentCard.value = null;
+  const me = playerInfos.value.find(p => p.name === myName.value);
+  if (me) {
+    me.hasPlaced = true;
+  }
 }
 
 function onCardDrawn(cardValue: number, deadline: number | null) {
@@ -235,6 +303,9 @@ function onCardDrawn(cardValue: number, deadline: number | null) {
   hasPlaced.value = false;
   autoPlayGeneration++;
   startCountdown(deadline);
+  for (const p of playerInfos.value) {
+    p.hasPlaced = false;
+  }
 
   if (autoPlay.value) {
     scheduleAutoPlay(autoPlayGeneration);
@@ -248,7 +319,7 @@ function onGameFinished() {
   sessionStorage.removeItem("numchen_session");
 }
 
-function getSavedSession(): { joinCode: string; playerId: string } | null {
+function getSavedSession(): { joinCode: string; playerId: string; playerName: string } | null {
   try {
     const raw = sessionStorage.getItem("numchen_session");
     if (!raw) {
@@ -273,7 +344,12 @@ async function tryRejoin(): Promise<boolean> {
   try {
     await hub.start();
     const result = await hub.rejoinGame(saved.playerId);
-    players.value = result.players;
+    myName.value = saved.playerName ?? "";
+    playerInfos.value = result.players.map(p => ({
+      name: p.name,
+      score: p.score,
+      hasPlaced: result.placedPlayers.includes(p.name),
+    }));
     gameStarted.value = result.gameStarted;
     gameFinished.value = result.gameFinished;
     currentCard.value = result.currentCard;
@@ -295,6 +371,8 @@ onMounted(async () => {
   hub.on("CardAutoPlaced", onCardAutoPlaced);
   hub.on("CardDrawn", onCardDrawn);
   hub.on("GameFinished", onGameFinished);
+  hub.on("PlayerPlaced", onPlayerPlaced);
+  hub.on("PlayerScored", onPlayerScored);
 
   const rejoined = await tryRejoin();
   if (!rejoined) {
@@ -309,6 +387,8 @@ onUnmounted(() => {
   hub.off("CardAutoPlaced", onCardAutoPlaced);
   hub.off("CardDrawn", onCardDrawn);
   hub.off("GameFinished", onGameFinished);
+  hub.off("PlayerPlaced", onPlayerPlaced);
+  hub.off("PlayerScored", onPlayerScored);
   stopCountdown();
   document.removeEventListener("pointermove", onPointerMove);
   document.removeEventListener("pointerup", onPointerUp);
@@ -610,6 +690,10 @@ async function onPlaceCard(index: number) {
     columns.value[index]!.push(card);
     hasPlaced.value = true;
     currentCard.value = null;
+    const me = playerInfos.value.find(p => p.name === myName.value);
+    if (me) {
+      me.hasPlaced = true;
+    }
     await hub.placeCard(index);
   } finally {
     isProcessing.value = false;
@@ -652,6 +736,10 @@ async function onPlaceDrawnCardToDestination() {
     const card = currentCard.value;
     hasPlaced.value = true;
     currentCard.value = null;
+    const me = playerInfos.value.find(p => p.name === myName.value);
+    if (me) {
+      me.hasPlaced = true;
+    }
     await hub.placeCard(colIndex);
     const { pileIndex } = await hub.moveToDestination(colIndex);
     destinations.value[pileIndex] = card;
@@ -755,9 +843,110 @@ async function onTopCardClick(index: number) {
   letter-spacing: 0.1em;
 }
 
-.player-list {
-  font-size: 1rem;
+.player-zones {
+  display: flex;
+  gap: 0.4rem;
+  flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0 0.5rem;
+}
+
+.player-zone {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  background: var(--color-background-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 56px;
+  gap: 0.1rem;
+}
+
+.player-zone-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.player-zone-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.player-zone-score {
+  font-size: 0.7rem;
   opacity: 0.7;
+}
+
+.placed-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.placed-dot.active {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.player-sort-move {
+  transition: transform 0.4s ease;
+}
+
+.player-sort-enter-active,
+.player-sort-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.player-sort-enter-from,
+.player-sort-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.9);
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.toast {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
 }
 
 .btn {

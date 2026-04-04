@@ -16,9 +16,15 @@ export interface JoinGameResult {
   players: string[];
 }
 
+export interface RejoinedPlayerInfo {
+  name: string;
+  score: number;
+}
+
 export interface RejoinGameResult {
   joinCode: string;
-  players: string[];
+  players: RejoinedPlayerInfo[];
+  placedPlayers: string[];
   gameStarted: boolean;
   gameFinished: boolean;
   currentCard: number | null;
@@ -38,6 +44,8 @@ export interface GameHubEvents {
   CardAutoPlaced: (columnIndex: number) => void;
   CardDrawn: (cardValue: number, deadline: number | null) => void;
   GameFinished: () => void;
+  PlayerPlaced: (playerName: string) => void;
+  PlayerScored: (playerName: string, score: number) => void;
 }
 
 export class GameHubClient {
