@@ -62,7 +62,7 @@
         </div>
       </div>
 
-      <div class="piles" :class="{ 'drag-over': dragOverDestinations }" data-drop="destinations">
+      <div class="piles" :class="{ 'drag-over': dragOverDestinations }" data-drop="destinations" @click="onPlaceDrawnCardToDestination">
         <div v-for="(pile, index) in destinations" :key="index" class="pile" data-drop="destinations">
           <div class="dest-card" :class="{ empty: pile === 0 }" :style="pile > 0 ? getCardStyle(pile) : undefined" data-drop="destinations">
             {{ pile > 0 ? pile : "" }}
