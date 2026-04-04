@@ -13,7 +13,7 @@ Building in vertical slices, each delivering something runnable:
    - Drag directly from drawn card to destination piles (currently must place in column first)
    - Fix touch dismissal to destination piles — taps register as small drags
    - ~~Distinct color per card number (1–16), legible in both light and dark mode~~ (done)
-   - Increase placement timeout by 50% (30s → 45s)
+   - ~~Increase placement timeout by 50% (30s → 45s)~~ (done)
    - ~~Improve contrast across the board — columns not visually distinct enough~~ (done)
    - Player move indicators — show whether each player has played their move (e.g. dot under name)
    - Better card styling, layout improvements, color/typography
