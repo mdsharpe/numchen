@@ -4,16 +4,15 @@ namespace Numchen.Api.Features.Game;
 
 public class GameHub : Hub
 {
-    private static readonly TimeSpan DisconnectGracePeriod = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan PlacementTimeout = TimeSpan.FromSeconds(45);
-
     private readonly GameSessionStore _store;
     private readonly IHubContext<GameHub> _hubContext;
+    private readonly GameHubOptions _options;
 
-    public GameHub(GameSessionStore store, IHubContext<GameHub> hubContext)
+    public GameHub(GameSessionStore store, IHubContext<GameHub> hubContext, GameHubOptions options)
     {
         _store = store;
         _hubContext = hubContext;
+        _options = options;
     }
 
     public override Task OnDisconnectedAsync(Exception? exception)
@@ -25,7 +24,7 @@ public class GameHub : Hub
         {
             lock (session.Lock)
             {
-                session.StartDisconnectTimer(playerId, OnDisconnectTimerExpired, DisconnectGracePeriod);
+                session.StartDisconnectTimer(playerId, OnDisconnectTimerExpired, _options.DisconnectGracePeriod);
             }
         }
 
@@ -187,7 +186,7 @@ public class GameHub : Hub
         {
             session.Game.Start();
             card = session.Game.DrawCard();
-            session.StartPlacementTimer(OnPlacementTimerExpired, PlacementTimeout);
+            session.StartPlacementTimer(OnPlacementTimerExpired, _options.PlacementTimeout);
         }
 
         var scores = GetAllScores(session);
@@ -203,7 +202,7 @@ public class GameHub : Hub
         {
             session.Game.Restart();
             card = session.Game.DrawCard();
-            session.StartPlacementTimer(OnPlacementTimerExpired, PlacementTimeout);
+            session.StartPlacementTimer(OnPlacementTimerExpired, _options.PlacementTimeout);
         }
 
         var scores = GetAllScores(session);
@@ -254,7 +253,7 @@ public class GameHub : Hub
             if (session.Game.State == Domain.GameState.ReadyToDraw)
             {
                 nextCard = session.Game.DrawCard();
-                session.StartPlacementTimer(OnPlacementTimerExpired, PlacementTimeout);
+                session.StartPlacementTimer(OnPlacementTimerExpired, _options.PlacementTimeout);
             }
             else if (session.Game.State == Domain.GameState.Finished)
             {

@@ -6,6 +6,7 @@ public static class ServiceCollectionExtensions
     {
         var maxCardValue = environment.IsDevelopment() ? 3 : Domain.Card.MaxValue;
         services.AddSingleton(new GameSessionStore(maxCardValue));
+        services.AddSingleton(new GameHubOptions());
         return services;
     }
 

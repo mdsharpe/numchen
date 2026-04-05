@@ -24,3 +24,5 @@ app.UseCors();
 app.MapGameFeature();
 
 app.Run();
+
+public partial class Program { }
