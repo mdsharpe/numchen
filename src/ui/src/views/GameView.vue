@@ -5,15 +5,6 @@
         <a class="home-link" href="/" @click.prevent="goHome">Numchen</a>
         <span class="join-code">{{ joinCode }}</span>
       </div>
-      <TransitionGroup name="player-sort" tag="div" class="player-zones">
-        <div v-for="p in sortedPlayers" :key="p.id" class="player-zone">
-          <div class="player-zone-name">{{ p.name }}</div>
-          <div class="player-zone-meta">
-            <span class="player-zone-score">{{ p.score }}</span>
-            <span class="placed-dot" :class="{ active: p.hasPlaced }"></span>
-          </div>
-        </div>
-      </TransitionGroup>
       <div class="header-right">
         <button
           v-if="!gameStarted"
@@ -32,6 +23,9 @@
         </button>
       </div>
     </div>
+
+    <div class="board-layout">
+    <div class="board-main">
 
     <div class="top-row">
       <div class="draw-area">
@@ -57,10 +51,7 @@
         </div>
         <div v-else-if="hasPlaced" class="draw-pile">
           <div class="drawn-card placeholder"></div>
-          <div class="draw-label">
-            <template v-if="waitingFor.length > 0">Waiting for {{ waitingFor.join(', ') }}…</template>
-            <template v-else>Waiting for other players...</template>
-          </div>
+          <div class="draw-label">Waiting…</div>
           <div v-if="countdown !== null" class="timer-bar-container">
             <div
               class="timer-bar"
@@ -118,6 +109,24 @@
         </div>
       </div>
     </div>
+
+    </div><!-- .board-main -->
+
+    <div class="player-sidebar">
+      <div class="sidebar-heading">Players</div>
+      <TransitionGroup name="player-sort" tag="div" class="sidebar-list">
+        <div v-for="p in sortedPlayers" :key="p.id" class="sidebar-player">
+          <span class="placed-dot" :class="{ active: p.hasPlaced }"></span>
+          <span class="sidebar-player-name">{{ p.name }}</span>
+          <span class="sidebar-player-score">{{ p.score }}</span>
+        </div>
+      </TransitionGroup>
+      <div v-if="hasPlaced && waitingFor.length > 0" class="sidebar-waiting">
+        Waiting for {{ waitingFor.join(', ') }}…
+      </div>
+    </div>
+
+    </div><!-- .board-layout -->
 
     <div
       v-if="drag && drag.isDragging"
@@ -850,46 +859,75 @@ async function onTopCardClick(index: number) {
   letter-spacing: 0.1em;
 }
 
-.player-zones {
+/* Board layout — main content + sidebar */
+.board-layout {
   display: flex;
-  gap: 0.4rem;
   flex: 1;
-  justify-content: center;
-  flex-wrap: wrap;
-  align-items: center;
-  padding: 0 0.5rem;
+  min-height: 0;
+  gap: 0.75rem;
 }
 
-.player-zone {
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 0.2rem 0.5rem;
-  background: var(--color-background-soft);
+.board-main {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  min-width: 56px;
-  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
 }
 
-.player-zone-name {
+.player-sidebar {
+  width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0;
+}
+
+.sidebar-heading {
   font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+  padding: 0 0.25rem;
+}
+
+.sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-player {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-background-soft);
+}
+
+.sidebar-player-name {
+  font-size: 0.85rem;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 80px;
+  flex: 1;
 }
 
-.player-zone-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.player-zone-score {
-  font-size: 0.7rem;
+.sidebar-player-score {
+  font-size: 0.85rem;
+  font-weight: 700;
   opacity: 0.7;
+}
+
+.sidebar-waiting {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  padding: 0.25rem;
+  line-height: 1.3;
 }
 
 .placed-dot {
@@ -1325,8 +1363,45 @@ async function onTopCardClick(index: number) {
     padding: 0.2rem 0.5rem;
   }
 
-  .player-list {
-    font-size: 0.8rem;
+  .board-layout {
+    flex-direction: column;
+  }
+
+  .player-sidebar {
+    order: -1;
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sidebar-heading {
+    display: none;
+  }
+
+  .sidebar-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .sidebar-player {
+    padding: 0.2rem 0.4rem;
+  }
+
+  .sidebar-player-name {
+    font-size: 0.75rem;
+  }
+
+  .sidebar-player-score {
+    font-size: 0.75rem;
+  }
+
+  .sidebar-waiting {
+    font-size: 0.7rem;
   }
 
   .btn {
