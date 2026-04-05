@@ -16,7 +16,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddSignalR();
-builder.Services.AddGameFeature();
+builder.Services.AddGameFeature(builder.Environment);
 
 var app = builder.Build();
 

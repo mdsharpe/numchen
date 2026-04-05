@@ -13,11 +13,13 @@ export interface PlayerSummary {
 export interface CreateGameResult {
   joinCode: string;
   playerId: string;
+  totalCards: number;
   players: PlayerSummary[];
 }
 
 export interface JoinGameResult {
   playerId: string;
+  totalCards: number;
   players: PlayerSummary[];
 }
 
@@ -29,6 +31,7 @@ export interface RejoinedPlayerInfo {
 
 export interface RejoinGameResult {
   joinCode: string;
+  totalCards: number;
   players: RejoinedPlayerInfo[];
   placedPlayers: string[];
   gameStarted: boolean;
@@ -50,6 +53,7 @@ export interface GameHubEvents {
   CardAutoPlaced: (columnIndex: number) => void;
   CardDrawn: (cardValue: number, deadline: number | null, scores: Record<string, number>) => void;
   GameFinished: () => void;
+  GameRestarted: (cardValue: number, deadline: number | null, scores: Record<string, number>) => void;
   PlayerPlaced: (playerId: string, playerName: string) => void;
   PlayerScored: (playerId: string, playerName: string, score: number) => void;
 }
@@ -110,6 +114,14 @@ export class GameHubClient {
 
   async moveToDestination(columnIndex: number): Promise<MoveToDestinationResult> {
     return await this.connection.invoke<MoveToDestinationResult>("MoveToDestination", columnIndex);
+  }
+
+  async restartGame(): Promise<void> {
+    await this.connection.invoke("RestartGame");
+  }
+
+  onReconnected(callback: () => void): void {
+    this.connection.onreconnected(callback);
   }
 }
 

@@ -50,7 +50,7 @@ public class DeckTests
         for (var value = Card.MinValue; value <= Card.MaxValue; value++)
         {
             var count = cards.Count(c => c.Value == value);
-            Assert.Equal(Deck.SetCount, count);
+            Assert.Equal(Deck.DefaultSetCount, count);
         }
     }
 

@@ -7,11 +7,13 @@ public class Game
     private readonly HashSet<string> _readyPlayers = new();
     private Card? _currentCard;
 
-    public Game(Random? random = null)
+    public Game(Random? random = null, int maxCardValue = Card.MaxValue)
     {
-        _deck = new Deck(random);
+        _deck = new Deck(random, maxCardValue: maxCardValue);
         State = GameState.WaitingForPlayers;
     }
+
+    public int TotalCards => _deck.SetCount * _deck.MaxCardValue;
 
     public GameState State { get; private set; }
 
@@ -48,6 +50,25 @@ public class Game
         if (_players.Count == 0)
         {
             throw new InvalidOperationException("Cannot start a game with no players.");
+        }
+
+        State = GameState.ReadyToDraw;
+    }
+
+    public void Restart()
+    {
+        if (State != GameState.Finished)
+        {
+            throw new InvalidOperationException("Cannot restart a game that is not finished.");
+        }
+
+        _deck.Reshuffle();
+        _readyPlayers.Clear();
+        _currentCard = null;
+
+        foreach (var playerId in _players.Keys)
+        {
+            _players[playerId] = new PlayerBoard();
         }
 
         State = GameState.ReadyToDraw;

@@ -2,9 +2,10 @@ namespace Numchen.Api.Features.Game;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddGameFeature(this IServiceCollection services)
+    public static IServiceCollection AddGameFeature(this IServiceCollection services, IHostEnvironment environment)
     {
-        services.AddSingleton<GameSessionStore>();
+        var maxCardValue = environment.IsDevelopment() ? 3 : Domain.Card.MaxValue;
+        services.AddSingleton(new GameSessionStore(maxCardValue));
         return services;
     }
 

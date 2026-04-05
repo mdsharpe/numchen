@@ -79,7 +79,7 @@ async function createGame() {
     const result = await hub.createGame(playerName.value);
     sessionStorage.setItem(
       "numchen_session",
-      JSON.stringify({ joinCode: result.joinCode, playerId: result.playerId, playerName: playerName.value }),
+      JSON.stringify({ joinCode: result.joinCode, playerId: result.playerId, playerName: playerName.value, totalCards: result.totalCards }),
     );
     router.push({
       name: "game",
@@ -95,7 +95,7 @@ async function joinGame() {
     const result = await hub.joinGame(joinCode.value, playerName.value);
     sessionStorage.setItem(
       "numchen_session",
-      JSON.stringify({ joinCode: joinCode.value, playerId: result.playerId, playerName: playerName.value }),
+      JSON.stringify({ joinCode: joinCode.value, playerId: result.playerId, playerName: playerName.value, totalCards: result.totalCards }),
     );
     router.push({
       name: "game",

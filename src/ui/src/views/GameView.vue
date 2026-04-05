@@ -146,8 +146,23 @@
 
     <div v-if="gameFinished" class="finished-overlay">
       <div class="finished-panel">
-        <div class="finished-icon">&#10003;</div>
-        <div class="finished-text">Game Over!</div>
+        <div class="finished-title">Game Over!</div>
+        <div class="finished-standings">
+          <div
+            v-for="(p, index) in sortedPlayers"
+            :key="p.id"
+            class="standing-row"
+            :class="{ 'is-me': p.id === myPlayerId, 'is-winner': p.score === sortedPlayers[0].score }"
+          >
+            <span class="standing-rank">{{ p.score === sortedPlayers[0].score ? '&#x1F451;' : `#${index + 1}` }}</span>
+            <span class="standing-name">{{ p.name }}</span>
+            <span class="standing-score">{{ p.score }} / {{ totalCards }}</span>
+          </div>
+        </div>
+        <div class="finished-actions">
+          <button class="btn primary" @click="restartGame">Play Again</button>
+          <button class="btn" @click="goHome">Leave</button>
+        </div>
       </div>
     </div>
   </div>
@@ -176,6 +191,7 @@ const joinCode = route.params.joinCode as string;
 const playerInfos = ref<PlayerInfo[]>([]);
 const myPlayerId = ref("");
 const myName = ref("");
+const totalCards = ref(96);
 const gameStarted = ref(false);
 const gameFinished = ref(false);
 const currentCard = ref<number | null>(null);
@@ -330,10 +346,37 @@ function onGameFinished() {
   gameFinished.value = true;
   currentCard.value = null;
   stopCountdown();
-  sessionStorage.removeItem("numchen_session");
 }
 
-function getSavedSession(): { joinCode: string; playerId: string; playerName: string } | null {
+function onGameRestarted(cardValue: number, deadline: number | null, scores: Record<string, number>) {
+  gameFinished.value = false;
+  currentCard.value = cardValue;
+  hasPlaced.value = false;
+  columns.value = [[], [], [], [], [], []];
+  destinations.value = [0, 0, 0, 0, 0, 0];
+
+  for (const p of playerInfos.value) {
+    p.score = scores[p.id] ?? 0;
+    p.hasPlaced = false;
+  }
+
+  startCountdown(deadline);
+
+  if (autoPlay.value) {
+    scheduleAutoPlay(autoPlayGeneration);
+  }
+}
+
+async function restartGame() {
+  try {
+    await hub.start();
+    await hub.restartGame();
+  } catch (e) {
+    console.error("Failed to restart game:", e);
+  }
+}
+
+function getSavedSession(): { joinCode: string; playerId: string; playerName: string; totalCards?: number } | null {
   try {
     const raw = sessionStorage.getItem("numchen_session");
     if (!raw) {
@@ -360,6 +403,7 @@ async function tryRejoin(): Promise<boolean> {
     const result = await hub.rejoinGame(saved.playerId);
     myPlayerId.value = saved.playerId;
     myName.value = saved.playerName ?? "";
+    totalCards.value = result.totalCards;
     playerInfos.value = result.players.map(p => ({
       id: p.id,
       name: p.name,
@@ -387,8 +431,20 @@ onMounted(async () => {
   hub.on("CardAutoPlaced", onCardAutoPlaced);
   hub.on("CardDrawn", onCardDrawn);
   hub.on("GameFinished", onGameFinished);
+  hub.on("GameRestarted", onGameRestarted);
   hub.on("PlayerPlaced", onPlayerPlaced);
   hub.on("PlayerScored", onPlayerScored);
+
+  hub.onReconnected(async () => {
+    const saved = getSavedSession();
+    if (saved) {
+      try {
+        await hub.rejoinGame(saved.playerId);
+      } catch (e) {
+        console.error("Failed to rejoin after reconnect:", e);
+      }
+    }
+  });
 
   const rejoined = await tryRejoin();
   if (!rejoined) {
@@ -403,6 +459,7 @@ onUnmounted(() => {
   hub.off("CardAutoPlaced", onCardAutoPlaced);
   hub.off("CardDrawn", onCardDrawn);
   hub.off("GameFinished", onGameFinished);
+  hub.off("GameRestarted", onGameRestarted);
   hub.off("PlayerPlaced", onPlayerPlaced);
   hub.off("PlayerScored", onPlayerScored);
   stopCountdown();
@@ -1297,30 +1354,76 @@ async function onTopCardClick(index: number) {
 }
 
 .finished-panel {
-  text-align: center;
   background: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  padding: 2.5rem 3.5rem;
+  padding: 2rem 2.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-}
-
-.finished-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 1rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  background: #16a34a;
-  color: white;
-  border-radius: 50%;
+  gap: 1.25rem;
+  min-width: 280px;
 }
 
-.finished-text {
+.finished-title {
   font-size: 1.75rem;
   font-weight: 700;
+}
+
+.finished-standings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.standing-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background-soft);
+}
+
+.standing-row.is-winner {
+  border-color: #ca8a04;
+  background: rgba(202, 138, 4, 0.08);
+}
+
+.standing-row.is-me {
+  outline: 2px solid #2563eb;
+  outline-offset: -1px;
+}
+
+.standing-rank {
+  font-size: 1rem;
+  font-weight: 700;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.standing-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.standing-score {
+  font-size: 0.9rem;
+  font-weight: 700;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.finished-actions {
+  display: flex;
+  gap: 0.75rem;
 }
 
 /* Dark-mode card colors: light text on deep-toned backgrounds */
@@ -1457,16 +1560,11 @@ async function onTopCardClick(index: number) {
   }
 
   .finished-panel {
-    padding: 1.5rem 2rem;
+    padding: 1.25rem 1.5rem;
+    min-width: 240px;
   }
 
-  .finished-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.5rem;
-  }
-
-  .finished-text {
+  .finished-title {
     font-size: 1.3rem;
   }
 }

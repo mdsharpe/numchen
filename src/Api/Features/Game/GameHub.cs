@@ -95,6 +95,7 @@ public class GameHub : Hub
         {
             JoinCode = session.JoinCode,
             PlayerId = playerId,
+            TotalCards = session.Game.TotalCards,
             Players = session.Game.PlayerIds.Select(pid => new
             {
                 Id = pid,
@@ -116,6 +117,7 @@ public class GameHub : Hub
         return new
         {
             PlayerId = playerId,
+            TotalCards = session.Game.TotalCards,
             Players = session.Game.PlayerIds.Select(pid => new
             {
                 Id = pid,
@@ -163,6 +165,7 @@ public class GameHub : Hub
         return new
         {
             JoinCode = session.JoinCode,
+            TotalCards = session.Game.TotalCards,
             Players = players,
             PlacedPlayers = placedPlayers,
             GameStarted = session.Game.State != Domain.GameState.WaitingForPlayers,
@@ -189,6 +192,22 @@ public class GameHub : Hub
 
         var scores = GetAllScores(session);
         await Clients.Group(session.Id).SendAsync("CardDrawn", card.Value, session.PlacementDeadline?.ToUnixTimeMilliseconds(), scores);
+    }
+
+    public async Task RestartGame()
+    {
+        var session = GetSessionForCurrentConnection();
+
+        Domain.Card card;
+        lock (session.Lock)
+        {
+            session.Game.Restart();
+            card = session.Game.DrawCard();
+            session.StartPlacementTimer(OnPlacementTimerExpired, PlacementTimeout);
+        }
+
+        var scores = GetAllScores(session);
+        await Clients.Group(session.Id).SendAsync("GameRestarted", card.Value, session.PlacementDeadline?.ToUnixTimeMilliseconds(), scores);
     }
 
     public async Task PlaceCard(int columnIndex)

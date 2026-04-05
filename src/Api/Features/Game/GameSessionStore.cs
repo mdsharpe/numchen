@@ -5,11 +5,17 @@ namespace Numchen.Api.Features.Game;
 public class GameSessionStore
 {
     private readonly ConcurrentDictionary<string, GameSession> _sessions = new();
+    private readonly int _maxCardValue;
+
+    public GameSessionStore(int maxCardValue = Domain.Card.MaxValue)
+    {
+        _maxCardValue = maxCardValue;
+    }
 
     public GameSession CreateSession()
     {
         var joinCode = GenerateJoinCode();
-        var session = new GameSession(joinCode);
+        var session = new GameSession(joinCode, _maxCardValue);
         _sessions[session.Id] = session;
         return session;
     }

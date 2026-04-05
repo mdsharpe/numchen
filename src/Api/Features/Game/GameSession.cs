@@ -13,10 +13,10 @@ public class GameSession
     private CancellationTokenSource? _placementTimerCts;
     public DateTimeOffset? PlacementDeadline { get; private set; }
 
-    public GameSession(string joinCode)
+    public GameSession(string joinCode, int maxCardValue = Domain.Card.MaxValue)
     {
         JoinCode = joinCode;
-        Game = new Domain.Game();
+        Game = new Domain.Game(maxCardValue: maxCardValue);
     }
 
     public string JoinPlayer(string connectionId, string playerName)
