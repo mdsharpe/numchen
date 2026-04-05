@@ -30,16 +30,19 @@
     <div class="top-row">
       <div class="draw-area">
         <div v-if="currentCard !== null && !hasPlaced" class="draw-pile">
-          <div
-            class="drawn-card"
-            :class="{ 'drag-source': drag?.type === 'drawn' && drag.isDragging, 'tilted': hoverColumn !== null && currentCard !== null && !hasPlaced, 'shimmer': currentCard !== null && !hasPlaced && canMoveToDestination(currentCard) }"
-            :style="getCardStyle(currentCard!)"
-            @pointerdown="onDrawnPointerDown"
-          >
-            <span class="card-pip top-left">{{ currentCard }}</span>
-            <span class="card-value">{{ currentCard }}</span>
-            <span class="card-pip bottom-right">{{ currentCard }}</span>
-          </div>
+          <Transition name="card-draw" appear>
+            <div
+              :key="currentCard"
+              class="drawn-card"
+              :class="{ 'drag-source': drag?.type === 'drawn' && drag.isDragging, 'tilted': hoverColumn !== null && currentCard !== null && !hasPlaced, 'shimmer': currentCard !== null && !hasPlaced && canMoveToDestination(currentCard) }"
+              :style="getCardStyle(currentCard!)"
+              @pointerdown="onDrawnPointerDown"
+            >
+              <span class="card-pip top-left">{{ currentCard }}</span>
+              <span class="card-value">{{ currentCard }}</span>
+              <span class="card-pip bottom-right">{{ currentCard }}</span>
+            </div>
+          </Transition>
           <div class="draw-label">Place this card</div>
           <div v-if="countdown !== null" class="timer-bar-container">
             <div
@@ -66,9 +69,11 @@
 
       <div class="piles" :class="{ 'drag-over': dragOverDestinations, 'drop-target': currentCard !== null && !hasPlaced && !isProcessing && canMoveToDestination(currentCard) }" data-drop="destinations" @click="onPlaceDrawnCardToDestination">
         <div v-for="(pile, index) in destinations" :key="index" class="pile" data-drop="destinations">
-          <div class="dest-card" :class="{ empty: pile === 0 }" :style="pile > 0 ? getCardStyle(pile) : undefined" data-drop="destinations">
-            {{ pile > 0 ? pile : "" }}
-          </div>
+          <Transition name="dest-pop">
+            <div :key="pile" class="dest-card" :class="{ empty: pile === 0 }" :style="pile > 0 ? getCardStyle(pile) : undefined" data-drop="destinations">
+              {{ pile > 0 ? pile : "" }}
+            </div>
+          </Transition>
         </div>
       </div>
     </div>
@@ -87,8 +92,8 @@
         @pointerenter="hoverColumn = index"
         @pointerleave="hoverColumn = hoverColumn === index ? null : hoverColumn"
       >
-        <div class="card-stack">
-          <div v-if="column.length === 0" class="card empty-placeholder"></div>
+        <TransitionGroup tag="div" class="card-stack" name="card-place">
+          <div v-if="column.length === 0" key="empty" class="card empty-placeholder"></div>
           <div
             v-for="(card, cardIndex) in column"
             :key="cardIndex"
@@ -106,7 +111,7 @@
             <span class="card-value">{{ card }}</span>
             <span class="card-pip bottom-right">{{ card }}</span>
           </div>
-        </div>
+        </TransitionGroup>
       </div>
     </div>
 
@@ -1478,6 +1483,41 @@ async function onTopCardClick(index: number): Promise<boolean> {
 .finished-actions {
   display: flex;
   gap: 0.75rem;
+}
+
+/* Card draw animation — new card appears in draw area */
+.card-draw-enter-active {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.card-draw-enter-from {
+  transform: scale(0.82) translateY(8px);
+  opacity: 0;
+}
+
+/* Card place animation — card enters/leaves a column */
+.card-place-enter-active {
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.card-place-enter-from {
+  transform: translateX(-50%) scale(0.72);
+  opacity: 0;
+}
+.card-place-leave-active {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.card-place-leave-to {
+  transform: translateX(-50%) scale(0.82);
+  opacity: 0;
+}
+
+/* Destination pop — card lands on a pile */
+@keyframes dest-pop {
+  0%   { transform: scale(0.78); opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+.dest-pop-enter-active {
+  animation: dest-pop 0.22s ease;
 }
 
 /* Dark-mode card colors: light text on deep-toned backgrounds */
