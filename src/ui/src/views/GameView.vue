@@ -138,6 +138,16 @@
       <span class="card-pip bottom-right">{{ drag.cardValue }}</span>
     </div>
 
+    <Transition name="conn-banner">
+      <div v-if="connectionStatus !== 'connected'" class="connection-banner" :class="connectionStatus">
+        <template v-if="connectionStatus === 'reconnecting'">Connection lost — reconnecting...</template>
+        <template v-else-if="connectionStatus === 'disconnected'">
+          Disconnected from server.
+          <button class="conn-retry-btn" @click="retryConnection">Rejoin</button>
+        </template>
+      </div>
+    </Transition>
+
     <div class="toast-container">
       <TransitionGroup name="toast">
         <div v-for="t in toasts" :key="t.id" class="toast">{{ t.message }}</div>
@@ -192,6 +202,7 @@ const playerInfos = ref<PlayerInfo[]>([]);
 const myPlayerId = ref("");
 const myName = ref("");
 const totalCards = ref(96);
+const connectionStatus = ref<"connected" | "reconnecting" | "disconnected">("connected");
 const gameStarted = ref(false);
 const gameFinished = ref(false);
 const currentCard = ref<number | null>(null);
@@ -376,6 +387,20 @@ async function restartGame() {
   }
 }
 
+async function retryConnection() {
+  connectionStatus.value = "reconnecting";
+  try {
+    await hub.start();
+    const saved = getSavedSession();
+    if (saved) {
+      await hub.rejoinGame(saved.playerId);
+    }
+    connectionStatus.value = "connected";
+  } catch {
+    connectionStatus.value = "disconnected";
+  }
+}
+
 function getSavedSession(): { joinCode: string; playerId: string; playerName: string; totalCards?: number } | null {
   try {
     const raw = sessionStorage.getItem("numchen_session");
@@ -435,15 +460,27 @@ onMounted(async () => {
   hub.on("PlayerPlaced", onPlayerPlaced);
   hub.on("PlayerScored", onPlayerScored);
 
+  hub.onReconnecting(() => {
+    connectionStatus.value = "reconnecting";
+  });
+
   hub.onReconnected(async () => {
     const saved = getSavedSession();
     if (saved) {
       try {
         await hub.rejoinGame(saved.playerId);
+        connectionStatus.value = "connected";
       } catch (e) {
         console.error("Failed to rejoin after reconnect:", e);
+        connectionStatus.value = "disconnected";
       }
+    } else {
+      connectionStatus.value = "disconnected";
     }
+  });
+
+  hub.onClose(() => {
+    connectionStatus.value = "disconnected";
   });
 
   const rejoined = await tryRejoin();
@@ -1049,6 +1086,56 @@ async function onTopCardClick(index: number) {
 .toast-leave-to {
   opacity: 0;
   transform: translateY(6px);
+}
+
+/* Connection banner */
+.connection-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 150;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.connection-banner.reconnecting {
+  background: #f59e0b;
+  color: #451a03;
+}
+
+.connection-banner.disconnected {
+  background: #dc2626;
+  color: white;
+}
+
+.conn-retry-btn {
+  margin-left: 0.75rem;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.conn-retry-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.conn-banner-enter-active,
+.conn-banner-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.conn-banner-enter-from,
+.conn-banner-leave-to {
+  transform: translateY(-100%);
+  opacity: 0;
 }
 
 .btn {

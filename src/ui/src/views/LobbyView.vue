@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getGameHub } from "@/gameHub";
 
@@ -59,18 +59,48 @@ const isConnected = ref(false);
 const isSlow = ref(false);
 const error = ref("");
 
-onMounted(async () => {
+const MAX_RETRIES = 10;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let cancelled = false;
+
+async function connectWithRetry() {
   const slowTimer = setTimeout(() => {
     isSlow.value = true;
   }, 3000);
 
-  try {
-    await hub.start();
-    isConnected.value = true;
-  } catch (e) {
-    error.value = "Failed to connect to server. Please try refreshing the page.";
-  } finally {
-    clearTimeout(slowTimer);
+  let attempt = 0;
+  while (!cancelled && attempt < MAX_RETRIES) {
+    try {
+      await hub.start();
+      isConnected.value = true;
+      clearTimeout(slowTimer);
+      return;
+    } catch {
+      attempt++;
+      if (cancelled || attempt >= MAX_RETRIES) {
+        break;
+      }
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+      await new Promise<void>(resolve => {
+        retryTimer = setTimeout(resolve, delay);
+      });
+    }
+  }
+
+  clearTimeout(slowTimer);
+  if (!cancelled) {
+    error.value = "Unable to reach the server. Please try refreshing the page.";
+  }
+}
+
+onMounted(() => {
+  connectWithRetry();
+});
+
+onUnmounted(() => {
+  cancelled = true;
+  if (retryTimer !== null) {
+    clearTimeout(retryTimer);
   }
 });
 

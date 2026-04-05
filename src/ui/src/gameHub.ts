@@ -123,6 +123,18 @@ export class GameHubClient {
   onReconnected(callback: () => void): void {
     this.connection.onreconnected(callback);
   }
+
+  onReconnecting(callback: (error?: Error) => void): void {
+    this.connection.onreconnecting(callback);
+  }
+
+  onClose(callback: (error?: Error) => void): void {
+    this.connection.onclose(callback);
+  }
+
+  get state(): HubConnectionState {
+    return this.connection.state;
+  }
 }
 
 let instance: GameHubClient | null = null;
