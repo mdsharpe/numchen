@@ -42,7 +42,7 @@ export interface GameHubEvents {
   PlayerJoined: (playerName: string) => void;
   PlayerLeft: (playerName: string) => void;
   CardAutoPlaced: (columnIndex: number) => void;
-  CardDrawn: (cardValue: number, deadline: number | null) => void;
+  CardDrawn: (cardValue: number, deadline: number | null, scores: Record<string, number>) => void;
   GameFinished: () => void;
   PlayerPlaced: (playerName: string) => void;
   PlayerScored: (playerName: string, score: number) => void;

@@ -178,7 +178,8 @@ public class GameHub : Hub
             session.StartPlacementTimer(OnPlacementTimerExpired, PlacementTimeout);
         }
 
-        await Clients.Group(session.Id).SendAsync("CardDrawn", card.Value, session.PlacementDeadline?.ToUnixTimeMilliseconds());
+        var scores = GetAllScores(session);
+        await Clients.Group(session.Id).SendAsync("CardDrawn", card.Value, session.PlacementDeadline?.ToUnixTimeMilliseconds(), scores);
     }
 
     public async Task PlaceCard(int columnIndex)
@@ -236,12 +237,23 @@ public class GameHub : Hub
 
         if (nextCard is not null)
         {
-            await clients.SendAsync("CardDrawn", nextCard.Value.Value, session.PlacementDeadline?.ToUnixTimeMilliseconds());
+            var scores = GetAllScores(session);
+            await clients.SendAsync("CardDrawn", nextCard.Value.Value, session.PlacementDeadline?.ToUnixTimeMilliseconds(), scores);
         }
         else if (finished)
         {
             await clients.SendAsync("GameFinished");
         }
+    }
+
+    private static Dictionary<string, int> GetAllScores(GameSession session)
+    {
+        var scores = new Dictionary<string, int>();
+        foreach (var pid in session.Game.PlayerIds)
+        {
+            scores[session.GetPlayerNameByPlayerId(pid)] = session.GetPlayerScore(pid);
+        }
+        return scores;
     }
 
     private GameSession GetSessionForCurrentConnection()

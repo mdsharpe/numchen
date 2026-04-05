@@ -154,7 +154,7 @@ const router = useRouter();
 const hub = getGameHub();
 
 const isDev = import.meta.env.DEV;
-const PLACEMENT_TIMEOUT_SECONDS = 30;
+const PLACEMENT_TIMEOUT_SECONDS = 45;
 
 interface PlayerInfo {
   name: string;
@@ -297,7 +297,7 @@ function onCardAutoPlaced(columnIndex: number) {
   }
 }
 
-function onCardDrawn(cardValue: number, deadline: number | null) {
+function onCardDrawn(cardValue: number, deadline: number | null, scores: Record<string, number>) {
   gameStarted.value = true;
   currentCard.value = cardValue;
   hasPlaced.value = false;
@@ -305,6 +305,9 @@ function onCardDrawn(cardValue: number, deadline: number | null) {
   startCountdown(deadline);
   for (const p of playerInfos.value) {
     p.hasPlaced = false;
+    if (scores && scores[p.name] !== undefined) {
+      p.score = scores[p.name]!;
+    }
   }
 
   if (autoPlay.value) {
@@ -1137,10 +1140,6 @@ async function onTopCardClick(index: number) {
   outline: 2px solid rgba(255, 255, 255, 0.75);
   outline-offset: -2px;
   transition: box-shadow 0.15s;
-}
-
-.card.top-card,
-.drawn-card.shimmer {
   background-image: linear-gradient(
     105deg,
     transparent 40%,
@@ -1149,6 +1148,24 @@ async function onTopCardClick(index: number) {
   );
   background-size: 200% 100%;
   animation: shimmer 2.5s ease-in-out infinite;
+}
+
+/* Use ::after for the drawn-card shimmer so the parent's border is painted
+   independently of the animated background, fixing the bottom-border-disappears bug. */
+.drawn-card.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--card-radius) - 2px);
+  background-image: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.5s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .card.top-card:hover {
