@@ -731,8 +731,7 @@ async function autoMoveToDestinations(generation: number): Promise<void> {
       if (getIsAutoPlayStale(generation)) {
         return;
       }
-      await onTopCardClick(colIndex);
-      moved = true;
+      moved = await onTopCardClick(colIndex);
       break; // Re-check after each move since state changed
     }
   }
@@ -795,16 +794,25 @@ async function onPlaceCard(index: number) {
   }
 
   isProcessing.value = true;
+  const card = currentCard.value;
   try {
-    const card = currentCard.value;
     columns.value[index]!.push(card);
     hasPlaced.value = true;
     currentCard.value = null;
-    const me = playerInfos.value.find(p => p.name === myName.value);
+    const me = playerInfos.value.find(p => p.id === myPlayerId.value);
     if (me) {
       me.hasPlaced = true;
     }
     await hub.placeCard(index);
+  } catch (e) {
+    console.error("Failed to place card:", e);
+    columns.value[index]!.pop();
+    hasPlaced.value = false;
+    currentCard.value = card;
+    const me = playerInfos.value.find(p => p.id === myPlayerId.value);
+    if (me) {
+      me.hasPlaced = false;
+    }
   } finally {
     isProcessing.value = false;
   }
@@ -842,26 +850,34 @@ async function onPlaceDrawnCardToDestination() {
     .sort((a, b) => a.len - b.len)[0]!.i;
 
   isProcessing.value = true;
+  const card = currentCard.value;
   try {
-    const card = currentCard.value;
     hasPlaced.value = true;
     currentCard.value = null;
-    const me = playerInfos.value.find(p => p.name === myName.value);
+    const me = playerInfos.value.find(p => p.id === myPlayerId.value);
     if (me) {
       me.hasPlaced = true;
     }
     await hub.placeCard(colIndex);
     const { pileIndex } = await hub.moveToDestination(colIndex);
     destinations.value[pileIndex] = card;
+  } catch (e) {
+    console.error("Failed to place drawn card to destination:", e);
+    hasPlaced.value = false;
+    currentCard.value = card;
+    const me = playerInfos.value.find(p => p.id === myPlayerId.value);
+    if (me) {
+      me.hasPlaced = false;
+    }
   } finally {
     isProcessing.value = false;
   }
 }
 
-async function onTopCardClick(index: number) {
+async function onTopCardClick(index: number): Promise<boolean> {
   const column = columns.value[index]!;
   if (column.length === 0 || isProcessing.value || gameFinished.value) {
-    return;
+    return false;
   }
 
   isProcessing.value = true;
@@ -869,8 +885,10 @@ async function onTopCardClick(index: number) {
     const { pileIndex } = await hub.moveToDestination(index);
     const card = column.pop()!;
     destinations.value[pileIndex] = card;
+    return true;
   } catch {
     // Move wasn't valid, ignore
+    return false;
   } finally {
     isProcessing.value = false;
   }
