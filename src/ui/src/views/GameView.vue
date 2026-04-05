@@ -148,12 +148,6 @@
       </div>
     </Transition>
 
-    <div class="toast-container">
-      <TransitionGroup name="toast">
-        <div v-for="t in toasts" :key="t.id" class="toast">{{ t.message }}</div>
-      </TransitionGroup>
-    </div>
-
     <div v-if="gameFinished" class="finished-overlay">
       <div class="finished-panel">
         <div class="finished-title">Game Over!</div>
@@ -180,7 +174,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import { getGameHub } from "@/gameHub";
 
 const route = useRoute();
@@ -216,9 +210,11 @@ let autoPlayGeneration = 0;
 const countdown = ref<number | null>(null);
 let countdownInterval: ReturnType<typeof setInterval> | null = null;
 const windowWidth = ref(window.innerWidth);
+const windowHeight = ref(window.innerHeight);
 
 function onWindowResize() {
   windowWidth.value = window.innerWidth;
+  windowHeight.value = window.innerHeight;
 }
 
 const sortedPlayers = computed(() =>
@@ -228,21 +224,6 @@ const sortedPlayers = computed(() =>
 const waitingFor = computed(() =>
   playerInfos.value.filter(p => !p.hasPlaced).map(p => p.name)
 );
-
-interface Toast {
-  id: number;
-  message: string;
-}
-const toasts = ref<Toast[]>([]);
-let nextToastId = 0;
-
-function showToast(message: string) {
-  const id = nextToastId++;
-  toasts.value.push({ id, message });
-  setTimeout(() => {
-    toasts.value = toasts.value.filter(t => t.id !== id);
-  }, 1500);
-}
 
 function getCardStyle(cardNumber: number) {
   return {
@@ -297,9 +278,6 @@ function onPlayerPlaced(playerId: string, playerName: string) {
   const p = playerInfos.value.find(p => p.id === playerId);
   if (p) {
     p.hasPlaced = true;
-  }
-  if (playerId !== myPlayerId.value) {
-    showToast(`${playerName} placed ✓`);
   }
 }
 
@@ -648,9 +626,9 @@ function getCardOffset(cardCount: number): number {
   if (cardCount <= 1) {
     return 0;
   }
-  const mobile = windowWidth.value < 640;
-  const cardHeight = mobile ? 28 : 40;
-  const maxStackHeight = mobile ? 200 : 280;
+  const compact = windowWidth.value < 640 || windowHeight.value < 480;
+  const cardHeight = compact ? 28 : 40;
+  const maxStackHeight = compact ? 200 : 280;
   const offset = (maxStackHeight - cardHeight) / (cardCount - 1);
   return Math.max(MIN_CARD_OFFSET, Math.min(MAX_CARD_OFFSET, offset));
 }
@@ -774,13 +752,18 @@ async function toggleAutoPlay(): Promise<void> {
   }
 }
 
-function goHome() {
-  if (!gameFinished.value && gameStarted.value) {
+onBeforeRouteLeave((_to, _from, next) => {
+  if (gameStarted.value && !gameFinished.value) {
     if (!confirm("Leave this game? Your progress will be lost.")) {
+      next(false);
       return;
     }
   }
   sessionStorage.removeItem("numchen_session");
+  next();
+});
+
+function goHome() {
   router.push({ name: "lobby" });
 }
 
@@ -1070,40 +1053,6 @@ async function onTopCardClick(index: number): Promise<boolean> {
 .player-sort-leave-to {
   opacity: 0;
   transform: translateY(-4px) scale(0.9);
-}
-
-.toast-container {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.toast {
-  background: rgba(0, 0, 0, 0.75);
-  color: white;
-  padding: 0.35rem 0.9rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.toast-enter-active,
-.toast-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateY(6px);
 }
 
 /* Connection banner */
@@ -1671,6 +1620,91 @@ async function onTopCardClick(index: number): Promise<boolean> {
 
   .finished-title {
     font-size: 1.3rem;
+  }
+}
+
+/* Landscape mobile — small height viewport (e.g. phones rotated) */
+@media (max-height: 480px) {
+  .game {
+    --card-width: 44px;
+    --card-height: 60px;
+    --card-radius: 5px;
+    padding: 0.15rem 0.35rem;
+  }
+
+  .header {
+    padding: 0.1rem 0;
+  }
+
+  .join-code {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .btn {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .top-row {
+    display: contents;
+  }
+
+  .draw-area {
+    align-self: center;
+    padding: 0.2rem 0;
+  }
+
+  .piles {
+    order: 2;
+    align-self: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0;
+    flex-shrink: 0;
+  }
+
+  .dest-card {
+    font-size: 1rem;
+  }
+
+  .tableau {
+    order: 1;
+    gap: 0.25rem;
+  }
+
+  .card-value {
+    font-size: 1rem;
+  }
+
+  .card-pip {
+    font-size: 0.5rem;
+  }
+
+  .card-pip.top-left {
+    top: 2px;
+    left: 3px;
+  }
+
+  .card-pip.bottom-right {
+    bottom: 2px;
+    right: 3px;
+  }
+
+  .draw-label {
+    font-size: 0.75rem;
+  }
+
+  .timer-bar-container {
+    width: 100px;
+  }
+
+  .finished-panel {
+    padding: 1rem 1.25rem;
+    min-width: 220px;
+  }
+
+  .finished-title {
+    font-size: 1.2rem;
   }
 }
 </style>
