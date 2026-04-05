@@ -47,7 +47,7 @@ public class GameHub : Hub
         }
 
         var clients = _hubContext.Clients.Group(session.Id);
-        clients.SendAsync("PlayerLeft", playerName).GetAwaiter().GetResult();
+        clients.SendAsync("PlayerLeft", playerId, playerName).GetAwaiter().GetResult();
 
         BroadcastGameStateAdvance(session, clients).GetAwaiter().GetResult();
     }
@@ -75,7 +75,7 @@ public class GameHub : Hub
 
             var playerName = session.GetPlayerNameByPlayerId(playerId);
             _hubContext.Clients.Group(session.Id)
-                .SendAsync("PlayerPlaced", playerName)
+                .SendAsync("PlayerPlaced", playerId, playerName)
                 .GetAwaiter().GetResult();
         }
 
@@ -95,7 +95,11 @@ public class GameHub : Hub
         {
             JoinCode = session.JoinCode,
             PlayerId = playerId,
-            Players = session.GetPlayerNames()
+            Players = session.Game.PlayerIds.Select(pid => new
+            {
+                Id = pid,
+                Name = session.GetPlayerNameByPlayerId(pid),
+            }).ToList()
         };
     }
 
@@ -107,12 +111,16 @@ public class GameHub : Hub
         var playerId = session.JoinPlayer(Context.ConnectionId, playerName);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, session.Id);
-        await Clients.OthersInGroup(session.Id).SendAsync("PlayerJoined", playerName);
+        await Clients.OthersInGroup(session.Id).SendAsync("PlayerJoined", playerId, playerName);
 
         return new
         {
             PlayerId = playerId,
-            Players = session.GetPlayerNames()
+            Players = session.Game.PlayerIds.Select(pid => new
+            {
+                Id = pid,
+                Name = session.GetPlayerNameByPlayerId(pid),
+            }).ToList()
         };
     }
 
@@ -143,12 +151,13 @@ public class GameHub : Hub
 
         var players = session.Game.PlayerIds.Select(pid => new
         {
+            Id = pid,
             Name = session.GetPlayerNameByPlayerId(pid),
             Score = session.GetPlayerScore(pid),
         }).ToList();
 
         var placedPlayers = session.Game.State == Domain.GameState.PlacingCard
-            ? session.Game.ReadyPlayers.Select(pid => session.GetPlayerNameByPlayerId(pid)).ToList()
+            ? session.Game.ReadyPlayers.ToList()
             : new List<string>();
 
         return new
@@ -193,7 +202,7 @@ public class GameHub : Hub
         }
 
         var playerName = session.GetPlayerNameByPlayerId(playerId);
-        await Clients.Group(session.Id).SendAsync("PlayerPlaced", playerName);
+        await Clients.Group(session.Id).SendAsync("PlayerPlaced", playerId, playerName);
         await BroadcastGameStateAdvance(session, Clients.Group(session.Id));
     }
 
@@ -211,7 +220,7 @@ public class GameHub : Hub
         }
 
         var playerName = session.GetPlayerNameByPlayerId(playerId);
-        await Clients.Group(session.Id).SendAsync("PlayerScored", playerName, score);
+        await Clients.Group(session.Id).SendAsync("PlayerScored", playerId, playerName, score);
 
         return new { PileIndex = pileIndex };
     }
@@ -251,7 +260,7 @@ public class GameHub : Hub
         var scores = new Dictionary<string, int>();
         foreach (var pid in session.Game.PlayerIds)
         {
-            scores[session.GetPlayerNameByPlayerId(pid)] = session.GetPlayerScore(pid);
+            scores[pid] = session.GetPlayerScore(pid);
         }
         return scores;
     }

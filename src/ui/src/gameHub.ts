@@ -5,18 +5,24 @@ import {
   type HubConnection,
 } from "@microsoft/signalr";
 
+export interface PlayerSummary {
+  id: string;
+  name: string;
+}
+
 export interface CreateGameResult {
   joinCode: string;
   playerId: string;
-  players: string[];
+  players: PlayerSummary[];
 }
 
 export interface JoinGameResult {
   playerId: string;
-  players: string[];
+  players: PlayerSummary[];
 }
 
 export interface RejoinedPlayerInfo {
+  id: string;
   name: string;
   score: number;
 }
@@ -39,13 +45,13 @@ export interface MoveToDestinationResult {
 }
 
 export interface GameHubEvents {
-  PlayerJoined: (playerName: string) => void;
-  PlayerLeft: (playerName: string) => void;
+  PlayerJoined: (playerId: string, playerName: string) => void;
+  PlayerLeft: (playerId: string, playerName: string) => void;
   CardAutoPlaced: (columnIndex: number) => void;
   CardDrawn: (cardValue: number, deadline: number | null, scores: Record<string, number>) => void;
   GameFinished: () => void;
-  PlayerPlaced: (playerName: string) => void;
-  PlayerScored: (playerName: string, score: number) => void;
+  PlayerPlaced: (playerId: string, playerName: string) => void;
+  PlayerScored: (playerId: string, playerName: string, score: number) => void;
 }
 
 export class GameHubClient {

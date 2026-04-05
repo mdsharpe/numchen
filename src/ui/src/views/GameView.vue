@@ -6,7 +6,7 @@
         <span class="join-code">{{ joinCode }}</span>
       </div>
       <TransitionGroup name="player-sort" tag="div" class="player-zones">
-        <div v-for="p in sortedPlayers" :key="p.name" class="player-zone">
+        <div v-for="p in sortedPlayers" :key="p.id" class="player-zone">
           <div class="player-zone-name">{{ p.name }}</div>
           <div class="player-zone-meta">
             <span class="player-zone-score">{{ p.score }}</span>
@@ -157,6 +157,7 @@ const isDev = import.meta.env.DEV;
 const PLACEMENT_TIMEOUT_SECONDS = 45;
 
 interface PlayerInfo {
+  id: string;
   name: string;
   score: number;
   hasPlaced: boolean;
@@ -164,6 +165,7 @@ interface PlayerInfo {
 
 const joinCode = route.params.joinCode as string;
 const playerInfos = ref<PlayerInfo[]>([]);
+const myPlayerId = ref("");
 const myName = ref("");
 const gameStarted = ref(false);
 const gameFinished = ref(false);
@@ -247,26 +249,26 @@ function stopCountdown() {
   }
 }
 
-function onPlayerJoined(playerName: string) {
-  playerInfos.value.push({ name: playerName, score: 0, hasPlaced: false });
+function onPlayerJoined(playerId: string, playerName: string) {
+  playerInfos.value.push({ id: playerId, name: playerName, score: 0, hasPlaced: false });
 }
 
-function onPlayerLeft(playerName: string) {
-  playerInfos.value = playerInfos.value.filter(p => p.name !== playerName);
+function onPlayerLeft(playerId: string, _playerName: string) {
+  playerInfos.value = playerInfos.value.filter(p => p.id !== playerId);
 }
 
-function onPlayerPlaced(playerName: string) {
-  const p = playerInfos.value.find(p => p.name === playerName);
+function onPlayerPlaced(playerId: string, playerName: string) {
+  const p = playerInfos.value.find(p => p.id === playerId);
   if (p) {
     p.hasPlaced = true;
   }
-  if (playerName !== myName.value) {
+  if (playerId !== myPlayerId.value) {
     showToast(`${playerName} placed ✓`);
   }
 }
 
-function onPlayerScored(playerName: string, score: number) {
-  const p = playerInfos.value.find(p => p.name === playerName);
+function onPlayerScored(playerId: string, _playerName: string, score: number) {
+  const p = playerInfos.value.find(p => p.id === playerId);
   if (p) {
     p.score = score;
   }
@@ -291,7 +293,7 @@ function onCardAutoPlaced(columnIndex: number) {
   columns.value[columnIndex]!.push(currentCard.value);
   hasPlaced.value = true;
   currentCard.value = null;
-  const me = playerInfos.value.find(p => p.name === myName.value);
+  const me = playerInfos.value.find(p => p.id === myPlayerId.value);
   if (me) {
     me.hasPlaced = true;
   }
@@ -305,8 +307,8 @@ function onCardDrawn(cardValue: number, deadline: number | null, scores: Record<
   startCountdown(deadline);
   for (const p of playerInfos.value) {
     p.hasPlaced = false;
-    if (scores && scores[p.name] !== undefined) {
-      p.score = scores[p.name]!;
+    if (scores && scores[p.id] !== undefined) {
+      p.score = scores[p.id]!;
     }
   }
 
@@ -347,11 +349,13 @@ async function tryRejoin(): Promise<boolean> {
   try {
     await hub.start();
     const result = await hub.rejoinGame(saved.playerId);
+    myPlayerId.value = saved.playerId;
     myName.value = saved.playerName ?? "";
     playerInfos.value = result.players.map(p => ({
+      id: p.id,
       name: p.name,
       score: p.score,
-      hasPlaced: result.placedPlayers.includes(p.name),
+      hasPlaced: result.placedPlayers.includes(p.id),
     }));
     gameStarted.value = result.gameStarted;
     gameFinished.value = result.gameFinished;
