@@ -27,6 +27,9 @@ public class NumchenWebApplicationFactory : WebApplicationFactory<Program>
             }
 
             services.AddSingleton(new GameSessionStore(maxCardValue: 3));
+
+            // Use a short finishing timeout in tests so WaitForGameFinishedAsync doesn't block long.
+            HubOptions.FinishingTimeout = TimeSpan.FromMilliseconds(500);
             services.AddSingleton(HubOptions);
         });
     }

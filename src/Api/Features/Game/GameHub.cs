@@ -51,6 +51,24 @@ public class GameHub : Hub
         BroadcastGameStateAdvance(session, clients).GetAwaiter().GetResult();
     }
 
+    private void OnFinishingTimerExpired(GameSession session)
+    {
+        lock (session.Lock)
+        {
+            if (session.Game.State != Domain.GameState.Finishing)
+            {
+                return;
+            }
+
+            session.Game.AdvanceToFinished();
+            session.CancelFinishingTimer();
+        }
+
+        _hubContext.Clients.Group(session.Id)
+            .SendAsync("GameFinished")
+            .GetAwaiter().GetResult();
+    }
+
     private void OnPlacementTimerExpired(GameSession session)
     {
         IReadOnlyList<(string PlayerId, int ColumnIndex)> placements;
@@ -168,10 +186,12 @@ public class GameHub : Hub
             Players = players,
             PlacedPlayers = placedPlayers,
             GameStarted = session.Game.State != Domain.GameState.WaitingForPlayers,
+            GameFinishing = session.Game.State == Domain.GameState.Finishing,
             GameFinished = session.Game.State == Domain.GameState.Finished,
             CurrentCard = session.Game.CurrentCard?.Value,
             HasPlaced = session.GetHasPlayerPlaced(playerId),
             PlacementDeadline = session.PlacementDeadline?.ToUnixTimeMilliseconds(),
+            FinishingDeadline = session.FinishingDeadline?.ToUnixTimeMilliseconds(),
             Columns = columns,
             Destinations = destinations
         };
@@ -231,14 +251,28 @@ public class GameHub : Hub
 
         int pileIndex;
         int score;
+        bool finishingComplete = false;
         lock (session.Lock)
         {
             pileIndex = session.Game.MoveToDestination(playerId, columnIndex);
             score = session.GetPlayerScore(playerId);
+
+            if (session.Game.State == Domain.GameState.Finishing
+                && session.Game.GetAllPlayersHaveNoDismissableCards())
+            {
+                session.Game.AdvanceToFinished();
+                session.CancelFinishingTimer();
+                finishingComplete = true;
+            }
         }
 
         var playerName = session.GetPlayerNameByPlayerId(playerId);
         await Clients.Group(session.Id).SendAsync("PlayerScored", playerId, playerName, score);
+
+        if (finishingComplete)
+        {
+            await Clients.Group(session.Id).SendAsync("GameFinished");
+        }
 
         return new { PileIndex = pileIndex };
     }
@@ -246,6 +280,7 @@ public class GameHub : Hub
     private async Task BroadcastGameStateAdvance(GameSession session, IClientProxy clients)
     {
         Domain.Card? nextCard = null;
+        bool finishing = false;
         bool finished = false;
 
         lock (session.Lock)
@@ -255,9 +290,26 @@ public class GameHub : Hub
                 nextCard = session.Game.DrawCard();
                 session.StartPlacementTimer(OnPlacementTimerExpired, _options.PlacementTimeout);
             }
+            else if (session.Game.State == Domain.GameState.Finishing)
+            {
+                session.CancelPlacementTimer();
+
+                if (session.Game.GetAllPlayersHaveNoDismissableCards())
+                {
+                    // Nothing to dismiss — skip finishing phase entirely
+                    session.Game.AdvanceToFinished();
+                    finished = true;
+                }
+                else
+                {
+                    session.StartFinishingTimer(OnFinishingTimerExpired, _options.FinishingTimeout);
+                    finishing = true;
+                }
+            }
             else if (session.Game.State == Domain.GameState.Finished)
             {
                 session.CancelPlacementTimer();
+                session.CancelFinishingTimer();
                 finished = true;
             }
         }
@@ -266,6 +318,11 @@ public class GameHub : Hub
         {
             var scores = GetAllScores(session);
             await clients.SendAsync("CardDrawn", nextCard.Value.Value, session.PlacementDeadline?.ToUnixTimeMilliseconds(), scores);
+        }
+        else if (finishing)
+        {
+            var scores = GetAllScores(session);
+            await clients.SendAsync("FinishingPhaseStarted", session.FinishingDeadline?.ToUnixTimeMilliseconds(), scores);
         }
         else if (finished)
         {

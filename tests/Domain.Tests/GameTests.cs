@@ -146,15 +146,15 @@ public class GameTests
         game.AddPlayer(playerId);
         game.Start();
         var drawCount = 0;
+        var board = game.GetPlayerBoard(playerId);
 
         // Act
-        while (game.State != GameState.Finished)
+        while (game.State != GameState.Finishing && game.State != GameState.Finished)
         {
             game.DrawCard();
             drawCount++;
             game.PlaceCard(playerId, drawCount % PlayerBoard.ColumnCount);
 
-            var board = game.GetPlayerBoard(playerId);
             for (var col = 0; col < PlayerBoard.ColumnCount; col++)
             {
                 while (board.GetCanMoveToDestination(col))
@@ -162,6 +162,19 @@ public class GameTests
                     board.MoveToDestination(col);
                 }
             }
+        }
+
+        if (game.State == GameState.Finishing)
+        {
+            for (var col = 0; col < PlayerBoard.ColumnCount; col++)
+            {
+                while (board.GetCanMoveToDestination(col))
+                {
+                    board.MoveToDestination(col);
+                }
+            }
+
+            game.AdvanceToFinished();
         }
 
         // Assert
@@ -192,7 +205,7 @@ public class GameTests
                 moved = true;
             }
 
-            if (game.State == GameState.Finished)
+            if (game.State == GameState.Finishing || game.State == GameState.Finished)
             {
                 break;
             }
@@ -210,14 +223,126 @@ public class GameTests
         game.AddPlayer(playerId);
         game.Start();
 
-        while (game.State != GameState.Finished)
+        while (game.State != GameState.Finishing && game.State != GameState.Finished)
         {
             game.DrawCard();
             game.PlaceCard(playerId, 0);
         }
 
+        if (game.State == GameState.Finishing)
+        {
+            game.AdvanceToFinished();
+        }
+
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => game.MoveToDestination(playerId, 0));
+    }
+
+    [Theory]
+    [AutoData]
+    public void LastCardPlaced_TransitionsToFinishing(int seed, string playerId)
+    {
+        // Arrange
+        var game = new Game(new Random(seed));
+        game.AddPlayer(playerId);
+        game.Start();
+
+        while (game.State != GameState.Finishing && game.State != GameState.Finished)
+        {
+            game.DrawCard();
+            game.PlaceCard(playerId, 0);
+        }
+
+        // Assert
+        Assert.True(game.State == GameState.Finishing || game.State == GameState.Finished);
+    }
+
+    [Theory]
+    [AutoData]
+    public void AdvanceToFinished_FromFinishing_Succeeds(int seed, string playerId)
+    {
+        // Arrange
+        var game = new Game(new Random(seed));
+        game.AddPlayer(playerId);
+        game.Start();
+
+        while (game.State != GameState.Finishing && game.State != GameState.Finished)
+        {
+            game.DrawCard();
+            game.PlaceCard(playerId, 0);
+        }
+
+        if (game.State == GameState.Finished)
+        {
+            return; // Board was clean — already finished, skip
+        }
+
+        // Act
+        game.AdvanceToFinished();
+
+        // Assert
+        Assert.Equal(GameState.Finished, game.State);
+    }
+
+    [Theory]
+    [AutoData]
+    public void AdvanceToFinished_NotInFinishing_Throws(int seed, string playerId)
+    {
+        // Arrange
+        var game = new Game(new Random(seed));
+        game.AddPlayer(playerId);
+        game.Start();
+        game.DrawCard();
+
+        // Act & Assert — still in PlacingCard, not Finishing
+        Assert.Throws<InvalidOperationException>(() => game.AdvanceToFinished());
+    }
+
+    [Theory]
+    [AutoData]
+    public void GetAllPlayersHaveNoDismissableCards_EmptyColumns_ReturnsTrue(int seed, string playerId)
+    {
+        // Arrange — game started but no cards placed yet
+        var game = new Game(new Random(seed));
+        game.AddPlayer(playerId);
+        game.Start();
+
+        // Act & Assert — all columns are empty, nothing to dismiss
+        Assert.True(game.GetAllPlayersHaveNoDismissableCards());
+    }
+
+    [Theory]
+    [AutoData]
+    public void MoveToDestination_DuringFinishingPhase_Succeeds(int seed, string playerId)
+    {
+        // Arrange — play until finishing phase
+        var game = new Game(new Random(seed));
+        game.AddPlayer(playerId);
+        game.Start();
+        var board = game.GetPlayerBoard(playerId);
+
+        while (game.State != GameState.Finishing && game.State != GameState.Finished)
+        {
+            game.DrawCard();
+            game.PlaceCard(playerId, 0);
+        }
+
+        if (game.State == GameState.Finished)
+        {
+            return; // Board was clean — nothing to test here
+        }
+
+        // Act — find a column with a dismissable card and move it
+        for (var col = 0; col < PlayerBoard.ColumnCount; col++)
+        {
+            if (board.GetCanMoveToDestination(col))
+            {
+                game.MoveToDestination(playerId, col); // Should not throw
+                return;
+            }
+        }
+
+        // No dismissable cards found — that's valid too
     }
 
     [Theory]

@@ -35,10 +35,12 @@ export interface RejoinGameResult {
   players: RejoinedPlayerInfo[];
   placedPlayers: string[];
   gameStarted: boolean;
+  gameFinishing: boolean;
   gameFinished: boolean;
   currentCard: number | null;
   hasPlaced: boolean;
   placementDeadline: number | null;
+  finishingDeadline: number | null;
   columns: number[][];
   destinations: number[];
 }
@@ -52,6 +54,7 @@ export interface GameHubEvents {
   PlayerLeft: (playerId: string, playerName: string) => void;
   CardAutoPlaced: (columnIndex: number) => void;
   CardDrawn: (cardValue: number, deadline: number | null, scores: Record<string, number>) => void;
+  FinishingPhaseStarted: (deadline: number | null, scores: Record<string, number>) => void;
   GameFinished: () => void;
   GameRestarted: (cardValue: number, deadline: number | null, scores: Record<string, number>) => void;
   PlayerPlaced: (playerId: string, playerName: string) => void;

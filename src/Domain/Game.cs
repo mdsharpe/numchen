@@ -112,7 +112,7 @@ public class Game
         {
             if (_deck.IsEmpty)
             {
-                State = GameState.Finished;
+                State = GameState.Finishing;
             }
             else
             {
@@ -121,6 +121,32 @@ public class Game
 
             _currentCard = null;
         }
+    }
+
+    public void AdvanceToFinished()
+    {
+        if (State != GameState.Finishing)
+        {
+            throw new InvalidOperationException("Game is not in the finishing phase.");
+        }
+
+        State = GameState.Finished;
+    }
+
+    public bool GetAllPlayersHaveNoDismissableCards()
+    {
+        foreach (var board in _players.Values)
+        {
+            for (var i = 0; i < PlayerBoard.ColumnCount; i++)
+            {
+                if (board.GetCanMoveToDestination(i))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     public IReadOnlyList<(string PlayerId, int ColumnIndex)> AutoPlaceForUnreadyPlayers()
@@ -181,7 +207,7 @@ public class Game
         {
             if (_deck.IsEmpty)
             {
-                State = GameState.Finished;
+                State = GameState.Finishing;
             }
             else
             {
@@ -189,6 +215,11 @@ public class Game
             }
 
             _currentCard = null;
+        }
+
+        if (State == GameState.Finishing && GetAllPlayersHaveNoDismissableCards())
+        {
+            State = GameState.Finished;
         }
     }
 
@@ -223,5 +254,6 @@ public enum GameState
     WaitingForPlayers,
     ReadyToDraw,
     PlacingCard,
+    Finishing,
     Finished
 }

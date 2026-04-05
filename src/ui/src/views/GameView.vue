@@ -52,6 +52,17 @@
             ></div>
           </div>
         </div>
+        <div v-else-if="gameFinishing" class="draw-pile">
+          <div class="drawn-card placeholder finishing"></div>
+          <div class="draw-label">Dismiss remaining!</div>
+          <div v-if="countdown !== null" class="timer-bar-container">
+            <div
+              class="timer-bar"
+              :class="{ urgent: countdown <= 5 }"
+              :style="{ width: timerPercent + '%' }"
+            ></div>
+          </div>
+        </div>
         <div v-else-if="hasPlaced" class="draw-pile">
           <div class="drawn-card placeholder"></div>
           <div class="draw-label">Waiting…</div>
@@ -188,6 +199,7 @@ const hub = getGameHub();
 
 const isDev = import.meta.env.DEV;
 const PLACEMENT_TIMEOUT_SECONDS = 45;
+const FINISHING_TIMEOUT_SECONDS = 30;
 
 interface PlayerInfo {
   id: string;
@@ -203,6 +215,7 @@ const myName = ref("");
 const totalCards = ref(96);
 const connectionStatus = ref<"connected" | "reconnecting" | "disconnected">("connected");
 const gameStarted = ref(false);
+const gameFinishing = ref(false);
 const gameFinished = ref(false);
 const currentCard = ref<number | null>(null);
 const hasPlaced = ref(false);
@@ -238,11 +251,13 @@ function getCardStyle(cardNumber: number) {
   };
 }
 
+const countdownDuration = ref(PLACEMENT_TIMEOUT_SECONDS);
+
 const timerPercent = computed(() => {
   if (countdown.value === null) {
     return 0;
   }
-  return Math.max(0, (countdown.value / PLACEMENT_TIMEOUT_SECONDS) * 100);
+  return Math.max(0, (countdown.value / countdownDuration.value) * 100);
 });
 
 function startCountdown(deadline: number | null) {
@@ -320,9 +335,11 @@ function onCardAutoPlaced(columnIndex: number) {
 
 function onCardDrawn(cardValue: number, deadline: number | null, scores: Record<string, number>) {
   gameStarted.value = true;
+  gameFinishing.value = false;
   currentCard.value = cardValue;
   hasPlaced.value = false;
   autoPlayGeneration++;
+  countdownDuration.value = PLACEMENT_TIMEOUT_SECONDS;
   startCountdown(deadline);
   for (const p of playerInfos.value) {
     p.hasPlaced = false;
@@ -336,14 +353,28 @@ function onCardDrawn(cardValue: number, deadline: number | null, scores: Record<
   }
 }
 
+function onFinishingPhaseStarted(deadline: number | null, scores: Record<string, number>) {
+  gameFinishing.value = true;
+  currentCard.value = null;
+  countdownDuration.value = FINISHING_TIMEOUT_SECONDS;
+  startCountdown(deadline);
+  for (const p of playerInfos.value) {
+    if (scores && scores[p.id] !== undefined) {
+      p.score = scores[p.id]!;
+    }
+  }
+}
+
 function onGameFinished() {
   gameFinished.value = true;
+  gameFinishing.value = false;
   currentCard.value = null;
   stopCountdown();
 }
 
 function onGameRestarted(cardValue: number, deadline: number | null, scores: Record<string, number>) {
   gameFinished.value = false;
+  gameFinishing.value = false;
   currentCard.value = cardValue;
   hasPlaced.value = false;
   columns.value = [[], [], [], [], [], []];
@@ -354,6 +385,7 @@ function onGameRestarted(cardValue: number, deadline: number | null, scores: Rec
     p.hasPlaced = false;
   }
 
+  countdownDuration.value = PLACEMENT_TIMEOUT_SECONDS;
   startCountdown(deadline);
 
   if (autoPlay.value) {
@@ -419,12 +451,19 @@ async function tryRejoin(): Promise<boolean> {
       hasPlaced: result.placedPlayers.includes(p.id),
     }));
     gameStarted.value = result.gameStarted;
+    gameFinishing.value = result.gameFinishing;
     gameFinished.value = result.gameFinished;
     currentCard.value = result.currentCard;
     hasPlaced.value = result.hasPlaced;
     columns.value = result.columns;
     destinations.value = result.destinations;
-    startCountdown(result.placementDeadline);
+    if (result.gameFinishing) {
+      countdownDuration.value = FINISHING_TIMEOUT_SECONDS;
+      startCountdown(result.finishingDeadline);
+    } else {
+      countdownDuration.value = PLACEMENT_TIMEOUT_SECONDS;
+      startCountdown(result.placementDeadline);
+    }
     return true;
   } catch {
     sessionStorage.removeItem("numchen_session");
@@ -438,6 +477,7 @@ onMounted(async () => {
   hub.on("PlayerLeft", onPlayerLeft);
   hub.on("CardAutoPlaced", onCardAutoPlaced);
   hub.on("CardDrawn", onCardDrawn);
+  hub.on("FinishingPhaseStarted", onFinishingPhaseStarted);
   hub.on("GameFinished", onGameFinished);
   hub.on("GameRestarted", onGameRestarted);
   hub.on("PlayerPlaced", onPlayerPlaced);
@@ -478,6 +518,7 @@ onUnmounted(() => {
   hub.off("PlayerLeft", onPlayerLeft);
   hub.off("CardAutoPlaced", onCardAutoPlaced);
   hub.off("CardDrawn", onCardDrawn);
+  hub.off("FinishingPhaseStarted", onFinishingPhaseStarted);
   hub.off("GameFinished", onGameFinished);
   hub.off("GameRestarted", onGameRestarted);
   hub.off("PlayerPlaced", onPlayerPlaced);

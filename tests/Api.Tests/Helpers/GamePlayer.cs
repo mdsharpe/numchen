@@ -19,6 +19,7 @@ public class GamePlayer : IAsyncDisposable
     private readonly Channel<PlayerLeftEvent> _playerLeftChannel = Channel.CreateUnbounded<PlayerLeftEvent>();
     private readonly Channel<int> _cardAutoPlacedChannel = Channel.CreateUnbounded<int>();
     private readonly Channel<CardDrawnEvent> _gameRestartedChannel = Channel.CreateUnbounded<CardDrawnEvent>();
+    private readonly Channel<long?> _finishingPhaseStartedChannel = Channel.CreateUnbounded<long?>();
     private readonly Channel<bool> _gameFinishedChannel = Channel.CreateUnbounded<bool>();
 
     public GamePlayer(HubConnection connection, string playerName)
@@ -59,6 +60,11 @@ public class GamePlayer : IAsyncDisposable
         _connection.On<int, long?, object>("GameRestarted", (value, deadline, scores) =>
         {
             _gameRestartedChannel.Writer.TryWrite(new CardDrawnEvent(value, deadline));
+        });
+
+        _connection.On<long?, object>("FinishingPhaseStarted", (deadline, scores) =>
+        {
+            _finishingPhaseStartedChannel.Writer.TryWrite(deadline);
         });
 
         _connection.On("GameFinished", () =>
@@ -159,6 +165,12 @@ public class GamePlayer : IAsyncDisposable
         return await _gameRestartedChannel.Reader.ReadAsync(cts.Token);
     }
 
+    public async Task<long?> WaitForFinishingPhaseStartedAsync(TimeSpan? timeout = null)
+    {
+        using var cts = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
+        return await _finishingPhaseStartedChannel.Reader.ReadAsync(cts.Token);
+    }
+
     public async Task WaitForGameFinishedAsync(TimeSpan? timeout = null)
     {
         using var cts = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
@@ -209,10 +221,12 @@ public class RejoinGameResponse
     public List<PlayerInfo> Players { get; set; } = [];
     public List<string> PlacedPlayers { get; set; } = [];
     public bool GameStarted { get; set; }
+    public bool GameFinishing { get; set; }
     public bool GameFinished { get; set; }
     public int? CurrentCard { get; set; }
     public bool HasPlaced { get; set; }
     public long? PlacementDeadline { get; set; }
+    public long? FinishingDeadline { get; set; }
     public int[][] Columns { get; set; } = [];
     public int[] Destinations { get; set; } = [];
 }

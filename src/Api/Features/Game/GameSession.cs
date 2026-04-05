@@ -11,7 +11,9 @@ public class GameSession
     private readonly Dictionary<string, string> _playerNamesByPlayerId = new();
     private readonly Dictionary<string, CancellationTokenSource> _disconnectTimers = new();
     private CancellationTokenSource? _placementTimerCts;
+    private CancellationTokenSource? _finishingTimerCts;
     public DateTimeOffset? PlacementDeadline { get; private set; }
+    public DateTimeOffset? FinishingDeadline { get; private set; }
 
     public GameSession(string joinCode, int maxCardValue = Domain.Card.MaxValue)
     {
@@ -170,6 +172,36 @@ public class GameSession
             _placementTimerCts.Cancel();
             _placementTimerCts.Dispose();
             _placementTimerCts = null;
+        }
+    }
+
+    public void StartFinishingTimer(Action<GameSession> onExpired, TimeSpan timeout)
+    {
+        CancelFinishingTimer();
+
+        FinishingDeadline = DateTimeOffset.UtcNow.Add(timeout);
+
+        var cts = new CancellationTokenSource();
+        _finishingTimerCts = cts;
+
+        _ = Task.Delay(timeout, cts.Token).ContinueWith(t =>
+        {
+            if (!t.IsCanceled)
+            {
+                onExpired(this);
+            }
+        }, TaskScheduler.Default);
+    }
+
+    public void CancelFinishingTimer()
+    {
+        FinishingDeadline = null;
+
+        if (_finishingTimerCts is not null)
+        {
+            _finishingTimerCts.Cancel();
+            _finishingTimerCts.Dispose();
+            _finishingTimerCts = null;
         }
     }
 }
