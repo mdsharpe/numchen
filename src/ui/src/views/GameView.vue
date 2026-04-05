@@ -1345,24 +1345,8 @@ async function onTopCardClick(index: number) {
   }
 }
 
-/* Mobile */
-@media (max-width: 640px) {
-  .game {
-    --card-width: 48px;
-    --card-height: 66px;
-    --card-radius: 6px;
-    padding: 0.25rem;
-  }
-
-  .header {
-    padding: 0.15rem 0;
-  }
-
-  .join-code {
-    font-size: 0.8rem;
-    padding: 0.2rem 0.5rem;
-  }
-
+/* Narrow viewport — collapse sidebar to horizontal strip */
+@media (max-width: 900px) {
   .board-layout {
     flex-direction: column;
   }
@@ -1402,6 +1386,25 @@ async function onTopCardClick(index: number) {
 
   .sidebar-waiting {
     font-size: 0.7rem;
+  }
+}
+
+/* Mobile — smaller cards and compact layout */
+@media (max-width: 640px) {
+  .game {
+    --card-width: 48px;
+    --card-height: 66px;
+    --card-radius: 6px;
+    padding: 0.25rem;
+  }
+
+  .header {
+    padding: 0.15rem 0;
+  }
+
+  .join-code {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
   }
 
   .btn {
