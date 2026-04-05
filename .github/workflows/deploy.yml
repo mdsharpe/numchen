@@ -38,14 +38,22 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Get Static Web App hostname
+      - name: Get Static Web App origins
         id: swa
         run: |
-          HOSTNAME=$(az staticwebapp show \
+          DEFAULT=$(az staticwebapp show \
             --name ${{ vars.AZURE_STATIC_WEB_APP_NAME }} \
             --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
             --query "defaultHostname" -o tsv)
-          echo "origin=https://$HOSTNAME" >> "$GITHUB_OUTPUT"
+          CUSTOMS=$(az staticwebapp show \
+            --name ${{ vars.AZURE_STATIC_WEB_APP_NAME }} \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+            --query "customDomains[]" -o tsv)
+          ORIGINS="https://$DEFAULT"
+          for DOMAIN in $CUSTOMS; do
+            ORIGINS="$ORIGINS;https://$DOMAIN"
+          done
+          echo "origins=$ORIGINS" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Container App
         run: |
@@ -53,7 +61,7 @@ jobs:
             --name ${{ vars.AZURE_CONTAINER_APP_NAME }} \
             --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
             --image ghcr.io/${{ github.repository }}/api:${{ github.sha }} \
-            --set-env-vars "AllowedOrigins=${{ steps.swa.outputs.origin }}"
+            --set-env-vars "AllowedOrigins=${{ steps.swa.outputs.origins }}"
 
   ui:
     name: Deploy UI
