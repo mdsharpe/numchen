@@ -16,9 +16,9 @@ Building in vertical slices, each delivering something runnable:
    - ~~Increase placement timeout by 50% (30s → 45s)~~ (done)
    - ~~Improve contrast across the board — columns not visually distinct enough~~ (done)
    - Player move indicators — show whether each player has played their move (e.g. dot under name)
-   - Shimmer effect on dismissable cards — bottom border disappears when shimmer is active (tried pseudo-element and background-image approaches, root cause unclear)
+   - ~~Shimmer effect on dismissable cards — bottom border disappears when shimmer is active~~ (done — used ::after pseudo-element for drawn-card shimmer)
    - Player zones in header are keyed by name (`v-for` in `GameView.vue`) — names may not be unique; should key by a stable player ID instead (requires threading player ID through to the client)
-   - Player scores in header not updating during play — `PlayerScored` event may not be firing or not being received correctly; needs investigation
+   - ~~Player scores in header not updating during play~~ (done — scores now broadcast with each CardDrawn event)
    - Better card styling, layout improvements, color/typography
    - Card animations (placement, moves to destination, draw)
    - Surface hub errors to the user (failures are mostly silent), connection loss feedback
