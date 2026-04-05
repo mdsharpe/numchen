@@ -815,6 +815,11 @@ function onCardClick(event: Event, columnIndex: number, cardIndex: number) {
     return;
   }
 
+  // If a drawn card is in hand, let the click bubble up to the column's onPlaceCard handler.
+  if (currentCard.value !== null && !hasPlaced.value) {
+    return;
+  }
+
   const column = columns.value[columnIndex]!;
   const isTopCard = cardIndex === column.length - 1;
   const topCard = isTopCard ? column[cardIndex]! : null;
@@ -1293,11 +1298,11 @@ async function onTopCardClick(index: number): Promise<boolean> {
 }
 
 .card.top-card {
-  cursor: grab;
+  cursor: pointer;
   touch-action: none;
   outline: 2px solid rgba(255, 255, 255, 0.75);
   outline-offset: -2px;
-  transition: box-shadow 0.15s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   background-image: linear-gradient(
     105deg,
     transparent 40%,
@@ -1327,7 +1332,8 @@ async function onTopCardClick(index: number): Promise<boolean> {
 }
 
 .card.top-card:hover {
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4), 0 2px 8px rgba(0, 0, 0, 0.12);
+  transform: translateX(-50%) translateY(-3px) scale(1.04);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .column.drop-target,
