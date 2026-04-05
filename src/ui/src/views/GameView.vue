@@ -162,9 +162,9 @@
             v-for="(p, index) in sortedPlayers"
             :key="p.id"
             class="standing-row"
-            :class="{ 'is-me': p.id === myPlayerId, 'is-winner': p.score === sortedPlayers[0].score }"
+            :class="{ 'is-me': p.id === myPlayerId, 'is-winner': p.score === sortedPlayers[0]?.score }"
           >
-            <span class="standing-rank">{{ p.score === sortedPlayers[0].score ? '&#x1F451;' : `#${index + 1}` }}</span>
+            <span class="standing-rank">{{ p.score === sortedPlayers[0]?.score ? '&#x1F451;' : `#${index + 1}` }}</span>
             <span class="standing-name">{{ p.name }}</span>
             <span class="standing-score">{{ p.score }} / {{ totalCards }}</span>
           </div>
