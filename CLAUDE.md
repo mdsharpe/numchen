@@ -25,6 +25,10 @@ Building in vertical slices, each delivering something runnable:
    - ~~Multiplayer visibility: leaderboard, surfacing other players' progress, final outcome (who won)~~ (done — game-over screen with ranked standings, winner crown, tie handling, play-again/leave)
    - Responsive UI for smaller screens
 
+## Parked
+
+- **Self-host on Ubuntu server** — explore k3s + Cloudflare Tunnel (or Docker Compose + Caddy) as a $0 alternative to Azure. Hit a wall on Azure App Service F1 (Free quota denied in uksouth); Azure infra has been torn down. Container Apps migration commit (89c763b) and subsequent App Service attempt are in git history if we ever want to revive them.
+
 ## Code style
 
 - Methods should be named beginning with a verb (e.g. `GetCanMoveToDestination` not `CanMoveToDestination`). Properties like `IsComplete` are fine.
