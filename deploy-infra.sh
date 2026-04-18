@@ -24,4 +24,4 @@ TF_LOG=INFO terraform init -upgrade
 TF_LOG=INFO terraform apply
 
 echo ""
-echo "Next: run ./setup-github.sh <GHCR_PAT>"
+echo "Next: run ./setup-github.sh"
