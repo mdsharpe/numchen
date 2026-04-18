@@ -3,52 +3,42 @@ resource "azurerm_resource_group" "main" {
   location = var.location
 }
 
-resource "azurerm_container_app_environment" "main" {
-  name                = "cae-${var.project}"
+resource "azurerm_service_plan" "api" {
+  name                = "asp-${var.project}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
+  os_type             = "Linux"
+  sku_name            = "F1"
 }
 
-resource "azurerm_container_app" "api" {
-  name                         = "ca-${var.project}"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  resource_group_name          = azurerm_resource_group.main.name
-  revision_mode                = "Single"
+resource "azurerm_linux_web_app" "api" {
+  name                = "app-${var.project}"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  service_plan_id     = azurerm_service_plan.api.id
 
-  template {
-    min_replicas = 0
-    max_replicas = 1
+  https_only = true
 
-    container {
-      name   = "api"
-      image  = "mcr.microsoft.com/dotnet/samples:aspnetapp"
-      cpu    = 0.25
-      memory = "0.5Gi"
-    }
+  site_config {
+    always_on         = false
+    use_32_bit_worker = true
+    ftps_state        = "Disabled"
+    http2_enabled     = true
 
-    http_scale_rule {
-      name                = "http-scaler"
-      concurrent_requests = 10
+    application_stack {
+      dotnet_version = "10.0"
     }
   }
 
-  ingress {
-    external_enabled = true
-    target_port      = 8080
-    transport        = "auto"
-
-    traffic_weight {
-      latest_revision = true
-      percentage      = 100
-    }
+  app_settings = {
+    "WEBSITE_RUN_FROM_PACKAGE" = "1"
+    "ASPNETCORE_ENVIRONMENT"   = "Production"
   }
 
-  # Image is managed by the deploy workflow, not Terraform
+  # App settings and deployed package are managed by the deploy workflow
   lifecycle {
     ignore_changes = [
-      template[0].container[0].image,
-      secret,
-      registry,
+      app_settings["AllowedOrigins"],
     ]
   }
 }

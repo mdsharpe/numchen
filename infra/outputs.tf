@@ -2,12 +2,12 @@ output "resource_group_name" {
   value = azurerm_resource_group.main.name
 }
 
-output "container_app_name" {
-  value = azurerm_container_app.api.name
+output "web_app_name" {
+  value = azurerm_linux_web_app.api.name
 }
 
 output "api_fqdn" {
-  value = azurerm_container_app.api.ingress[0].fqdn
+  value = azurerm_linux_web_app.api.default_hostname
 }
 
 output "static_web_app_name" {
