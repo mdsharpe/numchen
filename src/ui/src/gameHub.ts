@@ -69,7 +69,10 @@ export class GameHubClient {
     const hubUrl = apiUrl ? `${apiUrl}/game` : "/hub/game";
 
     this.connection = new HubConnectionBuilder()
-      .withUrl(hubUrl, { transport: HttpTransportType.LongPolling })
+      .withUrl(hubUrl, {
+        transport:
+          HttpTransportType.ServerSentEvents | HttpTransportType.LongPolling,
+      })
       .withAutomaticReconnect()
       .build();
   }

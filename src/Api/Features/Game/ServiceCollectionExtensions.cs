@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http.Connections;
+
 namespace Numchen.Api.Features.Game;
 
 public static class ServiceCollectionExtensions
@@ -12,7 +14,10 @@ public static class ServiceCollectionExtensions
 
     public static WebApplication MapGameFeature(this WebApplication app)
     {
-        app.MapHub<GameHub>("/game");
+        app.MapHub<GameHub>("/game", options =>
+        {
+            options.Transports = HttpTransportType.ServerSentEvents | HttpTransportType.LongPolling;
+        });
         return app;
     }
 }
