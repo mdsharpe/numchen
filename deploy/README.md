@@ -44,10 +44,8 @@ curl -sfL https://get.k3s.io | \
 
 The installer creates a systemd unit, installs `kubectl`/`crictl`/`ctr`
 symlinks, and writes an uninstall script to
-`/usr/local/bin/k3s-uninstall.sh`. k3s auto-upgrades only if you opt in
-via the system-upgrade controller; the installer itself pins the
-channel, not a version — re-run the command later to move to a new
-release.
+`/usr/local/bin/k3s-uninstall.sh`. The installer does not enable
+automatic upgrades; see step 1a below to opt in.
 
 Verify:
 
@@ -63,6 +61,55 @@ Tailscale):
 sudo cat /etc/rancher/k3s/k3s.yaml
 # replace 127.0.0.1 with the server's Tailscale IP in the client copy
 ```
+
+### 1a. Enable k3s auto-upgrades (optional)
+
+Rancher's [system-upgrade-controller][suc] watches `Plan` resources and
+performs rolling in-place upgrades by running a privileged Job on each
+matching node. For a single-node cluster that means a brief API
+outage (~30s) each time a new k3s release lands on the chosen channel.
+
+Install the controller and its CRDs (pin to a release tag so
+`kubectl apply` is reproducible):
+
+```bash
+SUC_VERSION=v0.16.0
+kubectl apply -f https://github.com/rancher/system-upgrade-controller/releases/download/${SUC_VERSION}/system-upgrade-controller.yaml
+kubectl apply -f https://github.com/rancher/system-upgrade-controller/releases/download/${SUC_VERSION}/crd.yaml
+```
+
+Then create a Plan that tracks the k3s `stable` channel. Swap the
+channel URL for `.../channels/v1.31` (or whichever minor) if you'd
+rather auto-track patch releases only and opt in to minor bumps by
+hand.
+
+```bash
+kubectl apply -f - <<'EOF'
+apiVersion: upgrade.cattle.io/v1
+kind: Plan
+metadata:
+  name: k3s-server
+  namespace: system-upgrade
+spec:
+  concurrency: 1
+  cordon: true
+  nodeSelector:
+    matchExpressions:
+      - { key: node-role.kubernetes.io/control-plane, operator: Exists }
+  serviceAccountName: system-upgrade
+  channel: https://update.k3s.io/v1-release/channels/stable
+  upgrade:
+    image: rancher/k3s-upgrade
+EOF
+```
+
+The controller polls the channel periodically; when a new version
+appears it schedules an upgrade Job on the node. Progress can be
+tailed with `kubectl -n system-upgrade get plans,jobs -w`.
+
+To pause auto-upgrades: `kubectl -n system-upgrade delete plan k3s-server`.
+
+[suc]: https://github.com/rancher/system-upgrade-controller
 
 ### 2. Install Helm
 
