@@ -36,10 +36,36 @@ The tunnel makes host ports 80/443 unnecessary, and the flags below
 skip Traefik and the built-in service LB so k3s never binds host
 ports — leaves any Podman containers alone.
 
+First, write a config file so the API server's TLS cert covers the
+names you'll actually connect with. By default k3s only puts the
+short hostname and `localhost` in the cert; if you plan to reach the
+API over Tailscale's `*.ts.net` FQDN (or any other DNS name), list
+them as `tls-san` entries now so you don't have to regenerate certs
+later:
+
+```bash
+sudo mkdir -p /etc/rancher/k3s
+sudo tee /etc/rancher/k3s/config.yaml >/dev/null <<'EOF'
+tls-san:
+  - <short-hostname>
+  - <short-hostname>.<tailnet>.ts.net
+EOF
+```
+
+Then run the installer:
+
 ```bash
 curl -sfL https://get.k3s.io | \
   INSTALL_K3S_EXEC="--disable=traefik --disable=servicelb --write-kubeconfig-mode=644" \
   sh -
+```
+
+If you edit `config.yaml` later (e.g. to add a new SAN), regenerate
+the dynamic cert and restart:
+
+```bash
+sudo rm /var/lib/rancher/k3s/server/tls/dynamic-cert.json
+sudo systemctl restart k3s
 ```
 
 The installer creates a systemd unit, installs `kubectl`/`crictl`/`ctr`
