@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions
 
     public static WebApplication MapGameFeature(this WebApplication app)
     {
-        app.MapHub<GameHub>("/game", options =>
+        app.MapHub<GameHub>("/hub/game", options =>
         {
             options.Transports = HttpTransportType.ServerSentEvents | HttpTransportType.LongPolling;
         });
