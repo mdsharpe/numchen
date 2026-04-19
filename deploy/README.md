@@ -54,13 +54,61 @@ sudo systemctl status k3s
 kubectl get nodes
 ```
 
-Copy the kubeconfig if you want to drive it from elsewhere (e.g. over
-Tailscale):
+### Driving the cluster from your workstation
+
+Work from your laptop over Tailscale rather than SSHing in for every
+`kubectl` invocation.
+
+On the **server**, find its Tailscale hostname (`tailscale status`
+shows the short name, e.g. `numchen-server`).
+
+On your **workstation**:
 
 ```bash
-sudo cat /etc/rancher/k3s/k3s.yaml
-# replace 127.0.0.1 with the server's Tailscale IP in the client copy
+# 1. Pull the kubeconfig over SSH/Tailscale
+mkdir -p ~/.kube
+scp <user>@<tailscale-host>:/etc/rancher/k3s/k3s.yaml ~/.kube/numchen.yaml
+# (if the file isn't readable as your SSH user: `sudo chmod 644` it on
+# the server first, or scp via a root-capable step)
+
+# 2. Point it at the Tailscale hostname instead of 127.0.0.1
+sed -i '' -e 's|https://127.0.0.1:6443|https://<tailscale-host>:6443|' ~/.kube/numchen.yaml
+# on Linux use: sed -i -e 's|...|...|' (no '' after -i)
+
+# 3. Rename the context/cluster/user so it doesn't clash if you merge
+#    with other clusters later
+kubectl --kubeconfig ~/.kube/numchen.yaml config rename-context default numchen
 ```
+
+Either set `KUBECONFIG=~/.kube/numchen.yaml` in your shell, or merge
+it into `~/.kube/config` once:
+
+```bash
+KUBECONFIG=~/.kube/config:~/.kube/numchen.yaml kubectl config view --flatten > ~/.kube/config.new
+mv ~/.kube/config.new ~/.kube/config
+chmod 600 ~/.kube/config
+kubectl config use-context numchen
+kubectl get nodes   # sanity check
+```
+
+### Install k9s (workstation TUI)
+
+k9s is a terminal UI over the kubeconfig — much nicer than raw
+`kubectl` for day-to-day poking. There's no apt repo, but upstream
+ships `.deb`s on GitHub releases.
+
+```bash
+K9S_VERSION=v0.32.7
+curl -fLO "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_linux_amd64.deb"
+sudo dpkg -i k9s_linux_amd64.deb
+rm k9s_linux_amd64.deb
+```
+
+Upgrade later by re-running the same three commands with a newer
+version tag from <https://github.com/derailed/k9s/releases>.
+
+Launch with `k9s` — it auto-reads `~/.kube/config` and the current
+context. `:pods`, `:svc`, `:deploy` to navigate; `?` for help.
 
 ### 1a. Enable k3s auto-upgrades (optional)
 
