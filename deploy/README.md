@@ -62,32 +62,36 @@ Work from your laptop over Tailscale rather than SSHing in for every
 On the **server**, find its Tailscale hostname (`tailscale status`
 shows the short name, e.g. `numchen-server`).
 
-On your **workstation**:
+On your **workstation** — pick a short name for the cluster (e.g.
+the server's Tailscale hostname) and use it consistently:
 
 ```bash
-# 1. Pull the kubeconfig over SSH/Tailscale
+CLUSTER=<tailscale-host>    # e.g. homelab
+HOST=<tailscale-host>       # usually the same; whatever resolves to the server
+
 mkdir -p ~/.kube
-scp <user>@<tailscale-host>:/etc/rancher/k3s/k3s.yaml ~/.kube/numchen.yaml
-# (if the file isn't readable as your SSH user: `sudo chmod 644` it on
-# the server first, or scp via a root-capable step)
+# 1. Pull the kubeconfig over SSH/Tailscale
+scp <user>@${HOST}:/etc/rancher/k3s/k3s.yaml /tmp/${CLUSTER}.yaml
+# (if unreadable as your SSH user: `sudo chmod 644` it on the server
+# first, or scp via a root-capable step)
 
 # 2. Point it at the Tailscale hostname instead of 127.0.0.1
-sed -i '' -e 's|https://127.0.0.1:6443|https://<tailscale-host>:6443|' ~/.kube/numchen.yaml
-# on Linux use: sed -i -e 's|...|...|' (no '' after -i)
+sed -i -e "s|https://127.0.0.1:6443|https://${HOST}:6443|" /tmp/${CLUSTER}.yaml
+# macOS sed needs: sed -i '' -e ...
 
-# 3. Rename the context/cluster/user so it doesn't clash if you merge
-#    with other clusters later
-kubectl --kubeconfig ~/.kube/numchen.yaml config rename-context default numchen
+# 3. Rename the default context/cluster/user so it doesn't clash when
+#    merged with other clusters
+kubectl --kubeconfig /tmp/${CLUSTER}.yaml config rename-context default ${CLUSTER}
 ```
 
-Either set `KUBECONFIG=~/.kube/numchen.yaml` in your shell, or merge
-it into `~/.kube/config` once:
+Merge into `~/.kube/config`:
 
 ```bash
-KUBECONFIG=~/.kube/config:~/.kube/numchen.yaml kubectl config view --flatten > ~/.kube/config.new
+KUBECONFIG=~/.kube/config:/tmp/${CLUSTER}.yaml kubectl config view --flatten > ~/.kube/config.new
 mv ~/.kube/config.new ~/.kube/config
 chmod 600 ~/.kube/config
-kubectl config use-context numchen
+rm /tmp/${CLUSTER}.yaml
+kubectl config use-context ${CLUSTER}
 kubectl get nodes   # sanity check
 ```
 
