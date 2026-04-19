@@ -197,18 +197,16 @@ Helm isn't packaged in Ubuntu repos. Use the upstream install script:
 curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ```
 
-### 3. GHCR pull secret (only needed while the package is private)
+### 3. Make the GHCR packages public (one-off)
 
-```bash
-kubectl create namespace numchen
-kubectl -n numchen create secret docker-registry ghcr \
-  --docker-server=ghcr.io \
-  --docker-username=<github-username> \
-  --docker-password=<github-PAT-with-read:packages>
-```
+Images are pushed to `ghcr.io/mdsharpe/numchen-api` and
+`ghcr.io/mdsharpe/numchen-ui`. The first push creates them as
+private; switch each to public once so the cluster can pull
+anonymously and you don't need a registry credential in-cluster:
 
-Then add `imagePullSecrets: [{ name: ghcr }]` via `--set` or an override file.
-Skip this entirely once the images are public.
+<https://github.com/users/mdsharpe/packages/container/numchen-api/settings>
+→ *Danger Zone* → *Change visibility* → *Public*. Repeat for
+`numchen-ui`.
 
 ## Deploying the app
 
