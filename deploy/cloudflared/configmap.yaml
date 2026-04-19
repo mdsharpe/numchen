@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: numchen
+data:
+  config.yaml: |
+    tunnel: numchen
+    credentials-file: /etc/cloudflared/creds/credentials.json
+    no-autoupdate: true
+    metrics: 0.0.0.0:2000
+    ingress:
+      # SignalR hub → API
+      - hostname: numchen.mdsharpe.com
+        path: ^/hub(/.*)?$
+        service: http://numchen-api:8080
+      # Everything else → UI (SPA)
+      - hostname: numchen.mdsharpe.com
+        service: http://numchen-ui:80
+      # Catch-all (required last rule)
+      - service: http_status:404
